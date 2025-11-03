@@ -45,3 +45,8 @@ export const TaskUpdateSchema = z.object({
 export const TaskDeleteSchema = z.object({
   taskId: z.string().uuid()
 });
+
+export const PoolCreateSchema = z.object({
+  name: z.string().min(1).max(100),
+  timezone: z.string().optional()
+});
