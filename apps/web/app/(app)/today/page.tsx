@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { getSupabaseClient } from "../../lib/supabase-client";
+import { getSupabaseClient } from "../../../lib/supabase-client";
 import { Card, Button, ProposalCard } from "@todaypool/ui";
 import { DatePicker, InputModal, ProposalCardSkeleton, SwipeableCard, FAB, VoiceInput, Modal, PullToRefresh, NetworkStatus } from "@todaypool/design-system";
 import type { Proposal } from "@todaypool/ui/src/ProposalCard";
