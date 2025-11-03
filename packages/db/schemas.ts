@@ -39,7 +39,8 @@ export const TaskUpdateSchema = z.object({
   description: z.string().max(5000).optional(),
   priority: z.number().int().min(1).max(5).optional(),
   visibility: z.enum(["owner_only","household","work","public"]).optional(),
-  status: z.enum(["open","in_progress","done","archived"]).optional()
+  status: z.enum(["open","in_progress","done","archived"]).optional(),
+  dueAt: z.string().optional() // ISO timestamp for due date/time
 });
 
 export const TaskDeleteSchema = z.object({

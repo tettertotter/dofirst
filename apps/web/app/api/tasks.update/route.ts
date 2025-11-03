@@ -19,10 +19,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { taskId, title, description, priority, visibility, status } = parsed.data;
+    const { taskId, title, description, priority, visibility, status, dueAt } = parsed.data;
 
     // At least one field must be provided for update
-    if (!title && !description && !priority && !visibility && !status) {
+    if (!title && !description && !priority && !visibility && !status && !dueAt) {
       return NextResponse.json(
         { error: "no_fields", message: "At least one field must be provided for update" },
         { status: 400 }
@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
     if (priority !== undefined) updateData.priority = priority;
     if (visibility !== undefined) updateData.visibility = visibility;
     if (status !== undefined) updateData.status = status;
+    if (dueAt !== undefined) updateData.due_at = dueAt || null;
 
     // Update the task
     const { data: updatedTask, error: updateError } = await supabase

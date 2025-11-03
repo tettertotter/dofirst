@@ -45,6 +45,7 @@ export default function PoolPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editPriority, setEditPriority] = useState<number>(3);
+  const [editDueAt, setEditDueAt] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Delete modal state
@@ -191,6 +192,14 @@ export default function PoolPage() {
     setEditTitle(task.title);
     setEditDescription(task.description || "");
     setEditPriority(task.priority);
+    // Convert ISO string to datetime-local format (YYYY-MM-DDTHH:mm)
+    if (task.due_at) {
+      const date = new Date(task.due_at);
+      const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+      setEditDueAt(localDate.toISOString().slice(0, 16));
+    } else {
+      setEditDueAt("");
+    }
     setEditModalOpen(true);
   };
 
@@ -200,6 +209,7 @@ export default function PoolPage() {
     setEditTitle("");
     setEditDescription("");
     setEditPriority(3);
+    setEditDueAt("");
   };
 
   const handleSaveEdit = async () => {
@@ -208,6 +218,9 @@ export default function PoolPage() {
     setSaving(true);
 
     try {
+      // Convert datetime-local format back to ISO string
+      const dueAtISO = editDueAt ? new Date(editDueAt).toISOString() : null;
+
       const res = await fetch("/api/tasks.update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -215,7 +228,8 @@ export default function PoolPage() {
           taskId: editingTask.id,
           title: editTitle,
           description: editDescription,
-          priority: editPriority
+          priority: editPriority,
+          dueAt: dueAtISO
         })
       });
 
@@ -584,6 +598,40 @@ export default function PoolPage() {
               disabled={saving}
               size="md"
             />
+          </div>
+          <div style={{ marginBottom: spacing.md }}>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: resolvedColors.text.primary,
+              marginBottom: spacing.xs
+            }}>
+              Due Date & Time
+            </label>
+            <input
+              type="datetime-local"
+              value={editDueAt}
+              onChange={(e) => setEditDueAt(e.target.value)}
+              disabled={saving}
+              style={{
+                width: '100%',
+                padding: spacing.sm,
+                fontSize: '14px',
+                borderRadius: '8px',
+                border: `1px solid ${resolvedColors.border.default}`,
+                backgroundColor: resolvedColors.surface.primary,
+                color: resolvedColors.text.primary
+              }}
+            />
+            <p style={{
+              fontSize: '12px',
+              color: resolvedColors.text.secondary,
+              marginTop: spacing.xs,
+              marginBottom: 0
+            }}>
+              Leave empty to remove due date
+            </p>
           </div>
         </div>
         <ModalFooter>
