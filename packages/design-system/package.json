@@ -1,0 +1,13 @@
+{
+  "name": "@todaypool/design-system",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "framer-motion": "^12.23.24"
+  }
+}

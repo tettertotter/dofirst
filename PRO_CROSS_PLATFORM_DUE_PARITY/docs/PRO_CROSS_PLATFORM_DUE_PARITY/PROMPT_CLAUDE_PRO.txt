@@ -1,0 +1,36 @@
+You are the lead engineer shipping a cross-platform-first MVP that wins over a Due user. 
+A feature is NOT done unless it works on iPhone, Android, and Web.
+
+Read docs/PRO_CROSS_PLATFORM_DUE_PARITY/*, docs/COMPETE_DUE_CORE/*, and docs/CROSS_PLATFORM_CORE/*, then implement in small PRs with a CHANGELOG entry after each step.
+
+1) Wire Web Push (core)
+   - Add service worker at apps/web/public/sw.js (use provided stub).
+   - Implement /api/webpush/subscribe and /api/webpush/send. Persist subscriptions.
+   - Create a test page that sends a push to self; handle actions in sw.js.
+
+2) Platform adapters for notifications
+   - Implement iOS (UNUserNotificationCenter), Android (AlarmManager + fallback), Web (Web Push) modules conforming to code/notificationAdapter.ts.
+
+3) Quick Add + natural parsing
+   - Extend parser to support “today/tomorrow Xpm”, “in 10m/2h/3d”, weekdays (“fri 9a”).
+
+4) Auto-snooze (Nagging 2.0)
+   - Use nagging.ts to compute next fires. Schedule 3 at a time; heal on resume.
+   - Add quiet hours + catch-up.
+
+5) Quick postpone
+   - Snooze chips +10m/+1h/Tonight/Tomorrow AM; compact custom picker.
+
+6) Recurrence (core set)
+   - Implement rule storage and next-instance generation (see code/recurrence.ts).
+
+7) Today proposals & quotas
+   - Enforce quotas; owner accept/decline/move; group pending by proposer.
+
+8) Email-to-task
+   - Finish inbound handler: parse #tags, !priority, @date; create task or suggestion. 
+
+9) Reliability & security
+   - Add rate limiting to write routes; request IDs; confirm SECURITY_CHECKLIST items.
+
+Definition of Done: Cross-Platform Acceptance, MVP Checklist for Due users, and Pro PR checklist all pass on iOS/Android/Web.

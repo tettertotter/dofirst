@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "TodayPool",
+    "slug": "todaypool",
+    "scheme": "todaypool",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {},
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

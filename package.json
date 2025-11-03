@@ -1,0 +1,17 @@
+{
+  "name": "todaypool",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "supabase/functions/*",
+    "tooling/*"
+  ],
+  "scripts": {
+    "dev:web": "pnpm --filter @todaypool/web dev",
+    "dev:mobile": "pnpm --filter @todaypool/mobile start",
+    "build": "turbo build"
+  }
+}

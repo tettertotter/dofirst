@@ -1,0 +1,33 @@
+You are enhancing TodayPool so a long-time Due user feels instantly at home and says “this is even better.” Work ONLY on core reminders—no watch app or timers.
+
+Read all files in docs/COMPETE_DUE_CORE/, then implement in this order with production care, small PRs, and CHANGELOG updates after each step:
+
+1) Quick Add parity
+   - Open on launch (web + mobile). Text or dictation. Partial submission allowed.
+   - Implement natural date parsing for “today 5pm”, “in 10 min”. Use existing parsing utility; extend if needed.
+
+2) Auto-snooze (Nagging 2.0)
+   - Implement cadence from NAGGING_ALGO_SPEC.md with local notifications and action buttons: Done, +10m, +1h, Tomorrow AM.
+   - iOS: UNUserNotificationCenter triggers; Android: AlarmManager with exact alarms (opt-in), fallback to exact-while-idle.
+   - Add quiet hours. Persist next fires; patch if missing.
+
+3) Quick postpone
+   - Add snooze chips on cards and notifications (+10m, +1h, Tonight, Tomorrow AM).
+   - Long-press opens Snooze Wheel for custom time.
+
+4) Recurring (core set)
+   - Daily, Weekdays, Weekly, Monthly(date), Yearly. Store as rules; generate next instance server-side.
+   - Near-term: nth weekday of month.
+
+5) Today proposals & quotas
+   - Implement proposer quotas and owner accept/decline/move flow with one-tap actions.
+   - Group pending by proposer with remaining slots badge.
+
+6) Email-to-task
+   - Finish inbound function: parse subject/body; #tags, !priority, @date; create task or suggestion.
+
+7) Reliability & UX polish
+   - Add quiet-hours catch-up; badge counts; minimal haptics.
+   - Add basic rate limiting to APIs; structured logs; update SECURITY_CHECKLIST items.
+
+Definition of Done: All items in MVP_CHECKLIST_FOR_DUE_USERS.md and acceptance/ACCEPTANCE_TESTS.md pass locally on iOS/Android/Web.

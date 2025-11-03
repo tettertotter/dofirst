@@ -1,0 +1,343 @@
+"use client";
+import React, { useState, useEffect } from "react";
+import { getSupabaseClient } from "../lib/supabase-client";
+import { Card } from "@todaypool/ui";
+import { Button } from "@todaypool/ui";
+import { QuickAddSchema } from "@todaypool/db/schemas";
+
+// Parse inline tokens from task title (#tags, !priority)
+function parseInline(input: string): { title: string; tags: string[]; priority?: number } {
+  const tags: string[] = [];
+  let priority: number | undefined = undefined;
+
+  // Extract tags (#word) and priority (!1-5)
+  let cleanTitle = input.replace(/#(\w+)/g, (_, tag) => {
+    tags.push(tag);
+    return '';
+  }).replace(/!([1-5])/g, (_, p) => {
+    priority = parseInt(p, 10);
+    return '';
+  });
+
+  // Clean up extra spaces
+  cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
+
+  return { title: cleanTitle, tags, priority };
+}
+
+export default function Home() {
+  const [title, setTitle] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | undefined>();
+  const [user, setUser] = useState<any>(null);
+  const [poolId, setPoolId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+
+    // Get current user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        // Get user's first pool
+        supabase
+          .from("pool_members")
+          .select("pool_id")
+          .eq("user_id", session.user.id)
+          .limit(1)
+          .single()
+          .then(({ data }) => {
+            if (data) setPoolId(data.pool_id);
+            setLoading(false);
+          });
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function signInWithMagicLink() {
+    const email = prompt("Enter your email:");
+    if (!email) return;
+
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin
+      }
+    });
+
+    if (error) {
+      setMessage(`Sign in error: ${error.message}`);
+    } else {
+      setMessage("Check your email for the magic link!");
+    }
+  }
+
+  async function signOut() {
+    const supabase = getSupabaseClient();
+    await supabase.auth.signOut();
+    setUser(null);
+    setPoolId(null);
+  }
+
+  async function quickAdd() {
+    if (!poolId) {
+      setMessage("No pool found. Please create a pool first.");
+      return;
+    }
+
+    setSubmitting(true);
+    setMessage(undefined);
+
+    try {
+      // Parse inline tokens from title
+      const parsed = parseInline(title);
+      const tags = parsed.tags.length > 0 ? parsed.tags : undefined;
+
+      const body = {
+        poolId,
+        title: parsed.title || title, // Use original if parsing removes everything
+        priority: parsed.priority,
+        tags
+      };
+
+      const validated = QuickAddSchema.safeParse(body);
+      if (!validated.success) {
+        throw new Error("Please enter a task title");
+      }
+
+      const res = await fetch("/api/tasks.quickAdd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validated.data)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Failed to create task");
+      }
+
+      setTitle("");
+      setMessage(`Task added: ${data.task.title}`);
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setMessage(undefined), 3000);
+    } catch (e: any) {
+      setMessage(`Error: ${e.message}`);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleKeyPress(e: React.KeyboardEvent) {
+    if (e.key === "Enter" && !e.shiftKey && title.trim()) {
+      e.preventDefault();
+      quickAdd();
+    }
+  }
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", marginTop: 40 }}>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+        background: '#0f172a'
+      }}>
+        <div style={{
+          width: '100%',
+          maxWidth: '420px',
+          textAlign: 'center'
+        }}>
+          {/* Logo/Title */}
+          <div style={{
+            marginBottom: '32px',
+            animation: 'fadeInDown 0.6s ease-out'
+          }}>
+            <h1 style={{
+              fontSize: '48px',
+              fontWeight: 800,
+              color: '#ffffff',
+              margin: 0,
+              marginBottom: '8px',
+              letterSpacing: '-1px'
+            }}>
+              DoFirst
+            </h1>
+            <p style={{
+              fontSize: '16px',
+              color: '#94a3b8',
+              margin: 0,
+              fontWeight: 500
+            }}>
+              Focus on what matters today
+            </p>
+          </div>
+
+          {/* Sign In Card */}
+          <Card>
+            <div style={{ padding: '32px' }}>
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: 600,
+                marginBottom: '12px',
+                color: '#0f172a'
+              }}>
+                Welcome Back
+              </h2>
+              <p style={{
+                marginBottom: '24px',
+                color: '#64748b',
+                fontSize: '15px',
+                lineHeight: '1.6'
+              }}>
+                Sign in to access your tasks and stay productive
+              </p>
+              <Button
+                onClick={signInWithMagicLink}
+                style={{
+                  width: '100%',
+                  padding: '16px 24px',
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  background: '#3b82f6',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: 'white',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#2563eb';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#3b82f6';
+                }}
+              >
+                Sign in with Email
+              </Button>
+              {message && (
+                <div style={{
+                  marginTop: '16px',
+                  padding: '12px 16px',
+                  borderRadius: '6px',
+                  background: message.startsWith('Error') ? '#fef2f2' : '#f0fdf4',
+                  color: message.startsWith('Error') ? '#dc2626' : '#16a34a',
+                  fontSize: '14px',
+                  border: `1px solid ${message.startsWith('Error') ? '#fecaca' : '#bbf7d0'}`,
+                  animation: 'slideIn 0.3s ease-out',
+                  fontWeight: 500
+                }}>
+                  {message}
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        <style>{`
+          @keyframes fadeInDown {
+            from {
+              opacity: 0;
+              transform: translateY(-20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @keyframes slideIn {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700 }}>DoFirst</h1>
+        <Button onClick={signOut}>Sign Out</Button>
+      </div>
+
+      <Card>
+        <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>Quick Add</h2>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Add a task... (try #work !2)"
+            style={{
+              flex: 1,
+              padding: 12,
+              borderRadius: 8,
+              border: "1px solid #ddd",
+              fontSize: 14
+            }}
+            autoFocus
+          />
+          <Button onClick={quickAdd} disabled={submitting || !title.trim()}>
+            {submitting ? "Adding..." : "Add"}
+          </Button>
+        </div>
+        {message && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: 8,
+              borderRadius: 6,
+              background: message.startsWith("Error") ? "#fee" : "#efe",
+              color: message.startsWith("Error") ? "#c00" : "#060",
+              fontSize: 13
+            }}
+          >
+            {message}
+          </div>
+        )}
+      </Card>
+
+      <Card style={{ marginTop: 16 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Tips</h3>
+        <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14, lineHeight: 1.6 }}>
+          <li>Use #tags to organize (e.g., #work #urgent)</li>
+          <li>Add !1 to !5 for priority (1 = highest)</li>
+          <li>Press Enter to add quickly</li>
+        </ul>
+      </Card>
+    </>
+  );
+}
