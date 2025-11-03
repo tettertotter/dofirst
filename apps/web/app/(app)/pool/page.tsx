@@ -207,6 +207,34 @@ export default function PoolPage() {
     }
   };
 
+  const handleStatusTransition = async (taskId: string, newStatus: string, successMessage: string) => {
+    setActionLoading(taskId);
+    setMessage(undefined);
+
+    try {
+      const res = await fetch("/api/tasks.update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, status: newStatus })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Failed to update task status");
+      }
+
+      setMessage(successMessage);
+      await fetchTasks();
+
+      setTimeout(() => setMessage(undefined), 3000);
+    } catch (err) {
+      setMessage(`Error: ${err instanceof Error ? err.message : "Failed to update task status"}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleQuickSnooze = async (taskId: string, minutes: number) => {
     setActionLoading(taskId);
     setMessage(undefined);
@@ -596,7 +624,7 @@ export default function PoolPage() {
                     </p>
                   )}
 
-                  {/* Actions: Edit + Delete + Snooze + Complete */}
+                  {/* Actions: Edit + Delete + Snooze + Status Transitions */}
                   <div style={{
                     display: 'flex',
                     gap: spacing.sm,
@@ -625,14 +653,37 @@ export default function PoolPage() {
                       onMoreOptions={(id) => openSnoozeModal(task)}
                       disabled={isLoading}
                     />
-                    <Button
-                      onClick={() => handleComplete(task.id)}
-                      variant="success"
-                      size="sm"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? <Spinner size="sm" /> : "✓ Done"}
-                    </Button>
+                    {/* Status transition buttons based on current status */}
+                    {task.status === 'open' && (
+                      <Button
+                        onClick={() => handleStatusTransition(task.id, 'in_progress', '✓ Marked as In Progress')}
+                        variant="primary"
+                        size="sm"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? <Spinner size="sm" /> : "→ In Progress"}
+                      </Button>
+                    )}
+                    {task.status !== 'done' && task.status !== 'archived' && (
+                      <Button
+                        onClick={() => handleComplete(task.id)}
+                        variant="success"
+                        size="sm"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? <Spinner size="sm" /> : "✓ Done"}
+                      </Button>
+                    )}
+                    {task.status === 'done' && (
+                      <Button
+                        onClick={() => handleStatusTransition(task.id, 'archived', '✓ Archived')}
+                        variant="secondary"
+                        size="sm"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? <Spinner size="sm" /> : "📦 Archive"}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Card>
