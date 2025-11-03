@@ -39,6 +39,10 @@ export default function PoolPage() {
   const [message, setMessage] = useState<string | undefined>();
   const { resolvedColors } = useTheme();
 
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -60,6 +64,29 @@ export default function PoolPage() {
     { value: "2", label: "Low (2)" },
     { value: "1", label: "Info (1)" }
   ];
+
+  const filterOptions: SelectOption[] = [
+    { value: "all", label: "All Priorities" },
+    { value: "5", label: "Urgent (5)" },
+    { value: "4", label: "High (4)" },
+    { value: "3", label: "Medium (3)" },
+    { value: "2", label: "Low (2)" },
+    { value: "1", label: "Info (1)" }
+  ];
+
+  // Filter tasks based on search query and priority
+  const filteredTasks = tasks.filter(task => {
+    // Search filter - check title and description
+    const matchesSearch = searchQuery.trim() === "" ||
+      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    // Priority filter
+    const matchesPriority = priorityFilter === "all" ||
+      task.priority === Number(priorityFilter);
+
+    return matchesSearch && matchesPriority;
+  });
 
   // Snooze modal state
   const { modalTask, openSnoozeModal, closeSnoozeModal, handleSnooze } = useSnooze({
@@ -406,8 +433,34 @@ export default function PoolPage() {
           color: resolvedColors.text.secondary,
           margin: 0
         }}>
-          {tasks.length} open task{tasks.length !== 1 ? 's' : ''}
+          {filteredTasks.length} of {tasks.length} task{tasks.length !== 1 ? 's' : ''}
         </p>
+      </div>
+
+      {/* Filter Controls */}
+      <div style={{
+        display: 'flex',
+        gap: spacing.md,
+        marginBottom: spacing.lg,
+        flexWrap: 'wrap'
+      }}>
+        <div style={{ flex: '1', minWidth: '200px' }}>
+          <Input
+            type="text"
+            placeholder="Search tasks..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="md"
+          />
+        </div>
+        <div style={{ minWidth: '180px' }}>
+          <Select
+            options={filterOptions}
+            value={priorityFilter}
+            onChange={(value) => setPriorityFilter(value)}
+            size="md"
+          />
+        </div>
       </div>
 
       {/* Status Messages */}
@@ -437,9 +490,30 @@ export default function PoolPage() {
             </p>
           </div>
         </Card>
+      ) : filteredTasks.length === 0 ? (
+        <Card>
+          <div style={{ padding: spacing.xl, textAlign: 'center' }}>
+            <p style={{
+              color: resolvedColors.text.secondary,
+              marginBottom: spacing.sm
+            }}>
+              No tasks match your filters.
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setSearchQuery("");
+                setPriorityFilter("all");
+              }}
+            >
+              Clear Filters
+            </Button>
+          </div>
+        </Card>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
-          {tasks.map((task) => {
+          {filteredTasks.map((task) => {
             const dueInfo = formatDueDate(task.due_at);
             const isLoading = actionLoading === task.id;
 
