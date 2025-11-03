@@ -27,6 +27,7 @@ interface Task {
   priority: number;
   due_at: string | null;
   status: string;
+  visibility: string;
   created_at: string;
   pool_id: string;
 }
@@ -50,6 +51,7 @@ export default function PoolPage() {
   const [editDescription, setEditDescription] = useState("");
   const [editPriority, setEditPriority] = useState<number>(3);
   const [editDueAt, setEditDueAt] = useState("");
+  const [editVisibility, setEditVisibility] = useState<string>("owner_only");
   const [saving, setSaving] = useState(false);
 
   // Delete modal state
@@ -72,6 +74,13 @@ export default function PoolPage() {
     { value: "3", label: "Medium (3)" },
     { value: "2", label: "Low (2)" },
     { value: "1", label: "Info (1)" }
+  ];
+
+  const visibilityOptions: SelectOption[] = [
+    { value: "owner_only", label: "Private (Owner Only)" },
+    { value: "household", label: "Household" },
+    { value: "work", label: "Work" },
+    { value: "public", label: "Public" }
   ];
 
   // Filter tasks based on search query and priority
@@ -219,6 +228,7 @@ export default function PoolPage() {
     setEditTitle(task.title);
     setEditDescription(task.description || "");
     setEditPriority(task.priority);
+    setEditVisibility(task.visibility || "owner_only");
     // Convert ISO string to datetime-local format (YYYY-MM-DDTHH:mm)
     if (task.due_at) {
       const date = new Date(task.due_at);
@@ -237,6 +247,7 @@ export default function PoolPage() {
     setEditDescription("");
     setEditPriority(3);
     setEditDueAt("");
+    setEditVisibility("owner_only");
   };
 
   const handleSaveEdit = async () => {
@@ -256,7 +267,8 @@ export default function PoolPage() {
           title: editTitle,
           description: editDescription,
           priority: editPriority,
-          dueAt: dueAtISO
+          dueAt: dueAtISO,
+          visibility: editVisibility
         })
       });
 
@@ -672,6 +684,32 @@ export default function PoolPage() {
               disabled={saving}
               size="md"
             />
+          </div>
+          <div style={{ marginBottom: spacing.md }}>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: resolvedColors.text.primary,
+              marginBottom: spacing.xs
+            }}>
+              Visibility
+            </label>
+            <Select
+              options={visibilityOptions}
+              value={editVisibility}
+              onChange={(value) => setEditVisibility(value)}
+              disabled={saving}
+              size="md"
+            />
+            <p style={{
+              fontSize: '12px',
+              color: resolvedColors.text.secondary,
+              marginTop: spacing.xs,
+              marginBottom: 0
+            }}>
+              Controls who can see this task in the pool
+            </p>
           </div>
           <div style={{ marginBottom: spacing.md }}>
             <label style={{
