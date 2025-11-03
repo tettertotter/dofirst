@@ -16,6 +16,7 @@ import {
   Input,
   Textarea,
   Select,
+  DatePicker,
   type SelectOption
 } from "@todaypool/design-system";
 import { SnoozeChips, SnoozeModal, useSnooze } from "@todaypool/ui";
@@ -59,6 +60,11 @@ export default function PoolPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Propose modal state
+  const [proposeDateModalOpen, setProposeDateModalOpen] = useState(false);
+  const [proposingTask, setProposingTask] = useState<Task | null>(null);
+  const [proposing, setProposing] = useState(false);
 
   const priorityOptions: SelectOption[] = [
     { value: "5", label: "Urgent (5)" },
@@ -231,6 +237,88 @@ export default function PoolPage() {
     } catch (err) {
       setMessage(`Error: ${err instanceof Error ? err.message : "Failed to update task status"}`);
     } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleProposeForToday = async (task: Task) => {
+    setProposing(true);
+    setActionLoading(task.id);
+    setMessage(undefined);
+
+    try {
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      const res = await fetch("/api/today.propose", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          poolId: task.pool_id,
+          taskId: task.id,
+          date: dateStr
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Failed to propose task");
+      }
+
+      setMessage(`✓ Proposed "${task.title}" for today`);
+
+      setTimeout(() => setMessage(undefined), 3000);
+    } catch (err) {
+      setMessage(`Error: ${err instanceof Error ? err.message : "Failed to propose task"}`);
+    } finally {
+      setProposing(false);
+      setActionLoading(null);
+    }
+  };
+
+  const handleOpenProposeDateModal = (task: Task) => {
+    setProposingTask(task);
+    setProposeDateModalOpen(true);
+  };
+
+  const handleProposeDateSelect = async (date: Date) => {
+    if (!proposingTask) return;
+
+    setProposing(true);
+    setActionLoading(proposingTask.id);
+    setMessage(undefined);
+
+    try {
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+      const res = await fetch("/api/today.propose", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          poolId: proposingTask.pool_id,
+          taskId: proposingTask.id,
+          date: dateStr
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Failed to propose task");
+      }
+
+      const formattedDate = date.toLocaleDateString();
+      setMessage(`✓ Proposed "${proposingTask.title}" for ${formattedDate}`);
+
+      setProposeDateModalOpen(false);
+      setProposingTask(null);
+
+      setTimeout(() => setMessage(undefined), 3000);
+    } catch (err) {
+      setMessage(`Error: ${err instanceof Error ? err.message : "Failed to propose task"}`);
+    } finally {
+      setProposing(false);
       setActionLoading(null);
     }
   };
@@ -653,6 +741,23 @@ export default function PoolPage() {
                       onMoreOptions={(id) => openSnoozeModal(task)}
                       disabled={isLoading}
                     />
+                    {/* Proposal buttons */}
+                    <Button
+                      onClick={() => handleProposeForToday(task)}
+                      variant="primary"
+                      size="sm"
+                      disabled={isLoading || proposing}
+                    >
+                      {(isLoading || proposing) ? <Spinner size="sm" /> : "📅 Today"}
+                    </Button>
+                    <Button
+                      onClick={() => handleOpenProposeDateModal(task)}
+                      variant="secondary"
+                      size="sm"
+                      disabled={isLoading || proposing}
+                    >
+                      {(isLoading || proposing) ? <Spinner size="sm" /> : "📆 Date"}
+                    </Button>
                     {/* Status transition buttons based on current status */}
                     {task.status === 'open' && (
                       <Button
@@ -893,6 +998,17 @@ export default function PoolPage() {
         open={!!modalTask}
         onClose={closeSnoozeModal}
         onSnooze={handleSnooze}
+      />
+
+      {/* Propose Date Picker Modal */}
+      <DatePicker
+        open={proposeDateModalOpen}
+        onClose={() => {
+          setProposeDateModalOpen(false);
+          setProposingTask(null);
+        }}
+        onSelect={handleProposeDateSelect}
+        title="Propose for which date?"
       />
     </div>
   );
