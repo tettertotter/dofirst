@@ -32,3 +32,16 @@ export const MemberInviteSchema = z.object({
 export const EmailAliasCreateSchema = z.object({
   poolId: z.string().uuid()
 });
+
+export const TaskUpdateSchema = z.object({
+  taskId: z.string().uuid(),
+  title: z.string().min(1).max(300).optional(),
+  description: z.string().max(5000).optional(),
+  priority: z.number().int().min(1).max(5).optional(),
+  visibility: z.enum(["owner_only","household","work","public"]).optional(),
+  status: z.enum(["open","in_progress","done","archived"]).optional()
+});
+
+export const TaskDeleteSchema = z.object({
+  taskId: z.string().uuid()
+});

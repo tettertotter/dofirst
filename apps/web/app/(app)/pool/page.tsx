@@ -2,7 +2,22 @@
 
 import React, { useState, useEffect } from "react";
 import { getSupabaseClient } from "../../../lib/supabase-client";
-import { Card, Spinner, useTheme, spacing, Button, Badge, Skeleton } from "@todaypool/design-system";
+import {
+  Card,
+  Spinner,
+  useTheme,
+  spacing,
+  Button,
+  Badge,
+  Skeleton,
+  Modal,
+  ModalHeader,
+  ModalFooter,
+  Input,
+  Textarea,
+  Select,
+  type SelectOption
+} from "@todaypool/design-system";
 import { SnoozeChips, SnoozeModal, useSnooze } from "@todaypool/ui";
 
 interface Task {
@@ -23,6 +38,27 @@ export default function PoolPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<string | undefined>();
   const { resolvedColors } = useTheme();
+
+  // Edit modal state
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editPriority, setEditPriority] = useState<number>(3);
+  const [saving, setSaving] = useState(false);
+
+  // Delete modal state
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingTask, setDeletingTask] = useState<Task | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const priorityOptions: SelectOption[] = [
+    { value: "5", label: "Urgent (5)" },
+    { value: "4", label: "High (4)" },
+    { value: "3", label: "Medium (3)" },
+    { value: "2", label: "Low (2)" },
+    { value: "1", label: "Info (1)" }
+  ];
 
   // Snooze modal state
   const { modalTask, openSnoozeModal, closeSnoozeModal, handleSnooze } = useSnooze({
@@ -147,6 +183,97 @@ export default function PoolPage() {
       setMessage(`Error: ${err instanceof Error ? err.message : "Failed to snooze task"}`);
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleOpenEditModal = (task: Task) => {
+    setEditingTask(task);
+    setEditTitle(task.title);
+    setEditDescription(task.description || "");
+    setEditPriority(task.priority);
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setEditingTask(null);
+    setEditTitle("");
+    setEditDescription("");
+    setEditPriority(3);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingTask) return;
+
+    setSaving(true);
+
+    try {
+      const res = await fetch("/api/tasks.update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          taskId: editingTask.id,
+          title: editTitle,
+          description: editDescription,
+          priority: editPriority
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Failed to update task");
+      }
+
+      setMessage("✓ Task updated successfully");
+      await fetchTasks();
+      handleCloseEditModal();
+
+      setTimeout(() => setMessage(undefined), 3000);
+    } catch (err) {
+      setMessage(`Error: ${err instanceof Error ? err.message : "Failed to update task"}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleOpenDeleteModal = (task: Task) => {
+    setDeletingTask(task);
+    setDeleteModalOpen(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setDeletingTask(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingTask) return;
+
+    setDeleting(true);
+
+    try {
+      const res = await fetch("/api/tasks.delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId: deletingTask.id })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Failed to delete task");
+      }
+
+      setMessage("✓ Task deleted successfully");
+      await fetchTasks();
+      handleCloseDeleteModal();
+
+      setTimeout(() => setMessage(undefined), 3000);
+    } catch (err) {
+      setMessage(`Error: ${err instanceof Error ? err.message : "Failed to delete task"}`);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -348,13 +475,29 @@ export default function PoolPage() {
                     </p>
                   )}
 
-                  {/* Actions: Snooze + Complete */}
+                  {/* Actions: Edit + Delete + Snooze + Complete */}
                   <div style={{
                     display: 'flex',
                     gap: spacing.sm,
                     marginTop: spacing.md,
                     flexWrap: 'wrap'
                   }}>
+                    <Button
+                      onClick={() => handleOpenEditModal(task)}
+                      variant="secondary"
+                      size="sm"
+                      disabled={isLoading}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      onClick={() => handleOpenDeleteModal(task)}
+                      variant="danger"
+                      size="sm"
+                      disabled={isLoading}
+                    >
+                      Delete
+                    </Button>
                     <SnoozeChips
                       taskId={task.id}
                       onQuickSnooze={(id, minutes) => handleQuickSnooze(id, minutes)}
@@ -376,6 +519,141 @@ export default function PoolPage() {
           })}
         </div>
       )}
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={editModalOpen}
+        onClose={handleCloseEditModal}
+        size="md"
+      >
+        <ModalHeader onClose={handleCloseEditModal}>
+          Edit Task
+        </ModalHeader>
+        <div style={{ padding: spacing.lg }}>
+          <div style={{ marginBottom: spacing.md }}>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: resolvedColors.text.primary,
+              marginBottom: spacing.xs
+            }}>
+              Title
+            </label>
+            <Input
+              type="text"
+              placeholder="Task title"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              disabled={saving}
+              size="md"
+            />
+          </div>
+          <div style={{ marginBottom: spacing.md }}>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: resolvedColors.text.primary,
+              marginBottom: spacing.xs
+            }}>
+              Description
+            </label>
+            <Textarea
+              placeholder="Optional description"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              disabled={saving}
+              rows={3}
+            />
+          </div>
+          <div style={{ marginBottom: spacing.md }}>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: resolvedColors.text.primary,
+              marginBottom: spacing.xs
+            }}>
+              Priority
+            </label>
+            <Select
+              options={priorityOptions}
+              value={String(editPriority)}
+              onChange={(value) => setEditPriority(Number(value))}
+              disabled={saving}
+              size="md"
+            />
+          </div>
+        </div>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            onClick={handleCloseEditModal}
+            disabled={saving}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSaveEdit}
+            disabled={saving || !editTitle.trim()}
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        size="sm"
+      >
+        <ModalHeader onClose={handleCloseDeleteModal}>
+          Delete Task
+        </ModalHeader>
+        <div style={{ padding: spacing.lg }}>
+          <p style={{
+            fontSize: '14px',
+            color: resolvedColors.text.primary,
+            marginBottom: spacing.sm
+          }}>
+            Are you sure you want to delete this task?
+          </p>
+          <p style={{
+            fontSize: '16px',
+            fontWeight: 600,
+            color: resolvedColors.text.primary,
+            marginBottom: spacing.sm
+          }}>
+            {deletingTask?.title}
+          </p>
+          <p style={{
+            fontSize: '13px',
+            color: resolvedColors.text.secondary,
+            marginBottom: 0
+          }}>
+            This action cannot be undone. The task and all associated data will be permanently removed.
+          </p>
+        </div>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            onClick={handleCloseDeleteModal}
+            disabled={deleting}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleConfirmDelete}
+            disabled={deleting}
+          >
+            {deleting ? 'Deleting...' : 'Delete Task'}
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       {/* Snooze Modal */}
       <SnoozeModal
