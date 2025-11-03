@@ -43,6 +43,7 @@ export default function PoolPage() {
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("open");
 
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -83,7 +84,15 @@ export default function PoolPage() {
     { value: "public", label: "Public" }
   ];
 
-  // Filter tasks based on search query and priority
+  const statusFilterOptions: SelectOption[] = [
+    { value: "all", label: "All Status" },
+    { value: "open", label: "Open" },
+    { value: "in_progress", label: "In Progress" },
+    { value: "done", label: "Done" },
+    { value: "archived", label: "Archived" }
+  ];
+
+  // Filter tasks based on search query, priority, and status
   const filteredTasks = tasks.filter(task => {
     // Search filter - check title and description
     const matchesSearch = searchQuery.trim() === "" ||
@@ -94,7 +103,11 @@ export default function PoolPage() {
     const matchesPriority = priorityFilter === "all" ||
       task.priority === Number(priorityFilter);
 
-    return matchesSearch && matchesPriority;
+    // Status filter
+    const matchesStatus = statusFilter === "all" ||
+      task.status === statusFilter;
+
+    return matchesSearch && matchesPriority && matchesStatus;
   });
 
   // Snooze modal state
@@ -146,12 +159,11 @@ export default function PoolPage() {
 
       const poolIds = memberships.map(m => m.pool_id);
 
-      // Fetch open tasks from user's pools
+      // Fetch all tasks from user's pools (filter by status client-side)
       const { data, error } = await supabase
         .from("tasks")
         .select("*")
         .in("pool_id", poolIds)
-        .eq("status", "open")
         .order("due_at", { ascending: true, nullsFirst: false })
         .order("priority", { ascending: false })
         .order("created_at", { ascending: false });
@@ -465,6 +477,14 @@ export default function PoolPage() {
             size="md"
           />
         </div>
+        <div style={{ minWidth: '160px' }}>
+          <Select
+            options={statusFilterOptions}
+            value={statusFilter}
+            onChange={(value) => setStatusFilter(value)}
+            size="md"
+          />
+        </div>
         <div style={{ minWidth: '180px' }}>
           <Select
             options={filterOptions}
@@ -517,6 +537,7 @@ export default function PoolPage() {
               onClick={() => {
                 setSearchQuery("");
                 setPriorityFilter("all");
+                setStatusFilter("open");
               }}
             >
               Clear Filters
