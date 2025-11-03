@@ -33,6 +33,9 @@ export function Modal({
   closeOnBackdrop = true,
   closeOnEscape = true
 }: ModalProps) {
+  const titleId = React.useId();
+  const modalRef = React.useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!open || !closeOnEscape) return;
 
@@ -56,6 +59,13 @@ export function Modal({
     }
   }, [open]);
 
+  // Focus management
+  useEffect(() => {
+    if (open && modalRef.current) {
+      modalRef.current.focus();
+    }
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -74,8 +84,14 @@ export function Modal({
       onClick={() => {
         if (closeOnBackdrop) onClose();
       }}
+      aria-hidden="true"
     >
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        tabIndex={-1}
         className="modal-content"
         style={{
           background: "#fff",
@@ -84,7 +100,8 @@ export function Modal({
           width: "100%",
           maxHeight: "90vh",
           overflow: "auto",
-          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+          outline: "none"
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -100,7 +117,7 @@ export function Modal({
               justifyContent: "space-between"
             }}
           >
-            <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>{title}</h2>
+            <h2 id={titleId} style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>{title}</h2>
             <button
               onClick={onClose}
               style={{

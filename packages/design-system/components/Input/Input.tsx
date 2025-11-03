@@ -137,6 +137,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       className,
       value,
       onChange,
+      id,
       ...props
     },
     ref
@@ -144,6 +145,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const { theme, isDark, resolvedColors } = useTheme();
     const [isFocused, setIsFocused] = useState(false);
     const [internalValue, setInternalValue] = useState(value || '');
+
+    // Generate unique IDs for accessibility
+    const inputId = id || `input-${React.useId()}`;
+    const helperTextId = `${inputId}-helper`;
+    const errorTextId = `${inputId}-error`;
 
     // Use controlled value if provided, otherwise internal state
     const currentValue = value !== undefined ? value : internalValue;
@@ -288,10 +294,17 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       },
     };
 
+    // Determine aria-describedby value
+    const describedBy = error && errorMessage
+      ? errorTextId
+      : helperText
+      ? helperTextId
+      : undefined;
+
     return (
       <div style={containerStyles} className={containerClassName}>
         {/* Label */}
-        {label && <label style={labelStyles}>{label}</label>}
+        {label && <label htmlFor={inputId} style={labelStyles}>{label}</label>}
 
         {/* Input wrapper */}
         <div style={wrapperStyles}>
@@ -305,11 +318,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           {/* Input element */}
           <input
             ref={ref}
+            id={inputId}
             value={currentValue}
             onChange={handleChange}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             disabled={disabled}
+            aria-invalid={error}
+            aria-describedby={describedBy}
             className={className}
             style={inputStyles}
             {...props}
@@ -337,7 +353,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
         {/* Error message or helper text */}
         {(errorMessage || helperText) && (
-          <span style={messageStyles}>
+          <span
+            id={error && errorMessage ? errorTextId : helperTextId}
+            style={messageStyles}
+          >
             {error && errorMessage ? errorMessage : helperText}
           </span>
         )}

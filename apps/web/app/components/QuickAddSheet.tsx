@@ -12,7 +12,9 @@ export function QuickAddSheet({ open, onClose, poolId }:{ open:boolean; onClose:
   function onVoice(text: string) {
     setTitle(prev => (prev ? prev + ' ' + text : text));
   }
-  async function submit() {
+
+  async function submit(e?: React.FormEvent) {
+    e?.preventDefault();
     if (!title.trim()) { showToast({ variant: 'error', message: 'Enter a task' }); return; }
     setBusy(true);
     try {
@@ -30,18 +32,30 @@ export function QuickAddSheet({ open, onClose, poolId }:{ open:boolean; onClose:
   }
 
   return (
-    <Modal open={open} onClose={onClose} ariaLabel="Quick add task">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md, padding: spacing.md, minWidth: 320 }}>
-        <h3 style={{ margin: 0 }}>Quick Add</h3>
-        <Input placeholder="Task (partial ok)" value={title} onChange={(e:any)=>setTitle(e.target.value)} autoFocus />
-        <Input placeholder="Notes (optional)" value={notes} onChange={(e:any)=>setNotes(e.target.value)} multiline />
-        <div style={{ display: 'flex', gap: spacing.sm }}>
+    <Modal open={open} onClose={onClose} title="Quick Add">
+      <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: spacing.md, padding: spacing.md, minWidth: 320 }}>
+        <Input
+          label="Task"
+          placeholder="Task (partial ok)"
+          value={title}
+          onChange={(e:any)=>setTitle(e.target.value)}
+          autoFocus
+          required
+        />
+        <Input
+          label="Notes (optional)"
+          placeholder="Add details..."
+          value={notes}
+          onChange={(e:any)=>setNotes(e.target.value)}
+          multiline
+        />
+        <div style={{ display: 'flex', gap: spacing.sm, alignItems: 'center' }}>
           <VoiceInput onTranscript={onVoice} aria-label="Dictate task" />
           <div style={{ flex: 1 }} />
-          <Button onClick={submit} disabled={busy}>Add</Button>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button type="submit" disabled={busy} aria-label="Add task">Add</Button>
+          <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
         </div>
-      </div>
+      </form>
     </Modal>
   );
 }

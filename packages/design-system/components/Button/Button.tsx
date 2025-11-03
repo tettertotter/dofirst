@@ -75,6 +75,16 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
    * Custom class name
    */
   className?: string;
+
+  /**
+   * ARIA label for screen readers
+   */
+  'aria-label'?: string;
+
+  /**
+   * ARIA described-by reference
+   */
+  'aria-describedby'?: string;
 }
 
 /**
@@ -335,6 +345,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           disabled={isDisabled}
           className={`${buttonClass} ${className || ''}`}
           onClick={handleClick}
+          aria-busy={loading}
+          aria-label={props['aria-label']}
+          aria-describedby={props['aria-describedby']}
           // Spring-based press animation
           whileTap={isDisabled ? {} : { scale: 0.95 }}
           transition={transition}
