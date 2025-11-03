@@ -6,3 +6,4 @@ export * from "./src/SnoozeModal";
 export * from "./src/TimeWheelPicker";
 export * from "./src/useSnooze";
 export * from "./src/ProposalCard";
+// export * from "./src/useProposals"; // uncomment when implemented
