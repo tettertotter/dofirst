@@ -2,7 +2,23 @@
 
 import React, { useState, useEffect } from "react";
 import { getSupabaseClient } from "../../../lib/supabase-client";
-import { Card, CardContent, Spinner, useTheme, spacing, Badge, Skeleton } from "@todaypool/design-system";
+import { 
+  Card, 
+  CardContent, 
+  Spinner, 
+  useTheme, 
+  spacing, 
+  Badge, 
+  Skeleton,
+  Button,
+  Modal,
+  ModalHeader,
+  ModalFooter,
+  Input,
+  Select,
+  useToast,
+  type SelectOption
+} from "@todaypool/design-system";
 
 interface PoolMember {
   id: string;
@@ -25,7 +41,19 @@ export default function PeoplePage() {
   const [user, setUser] = useState<any>(null);
   const [pools, setPools] = useState<Pool[]>([]);
   const [loading, setLoading] = useState(true);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [selectedPoolId, setSelectedPoolId] = useState<string>("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<string>("spouse");
+  const [inviting, setInviting] = useState(false);
   const { resolvedColors } = useTheme();
+  const toast = useToast();
+
+  const roleOptions: SelectOption[] = [
+    { value: "spouse", label: "Spouse" },
+    { value: "colleague", label: "Colleague" },
+    { value: "guest", label: "Guest" }
+  ];
 
   useEffect(() => {
     const supabase = getSupabaseClient();
@@ -110,8 +138,93 @@ export default function PeoplePage() {
       setPools(poolsWithMembers);
     } catch (err) {
       console.error("Failed to fetch pools and members:", err);
+      toast.show({
+        title: "Error",
+        description: "Failed to fetch pool members",
+        variant: "error"
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenInviteModal = (poolId: string) => {
+    setSelectedPoolId(poolId);
+    setInviteEmail("");
+    setInviteRole("spouse");
+    setInviteModalOpen(true);
+  };
+
+  const handleCloseInviteModal = () => {
+    setInviteModalOpen(false);
+    setSelectedPoolId("");
+    setInviteEmail("");
+    setInviteRole("spouse");
+  };
+
+  const handleInviteMember = async () => {
+    if (!inviteEmail || !selectedPoolId) {
+      toast.show({
+        title: "Validation Error",
+        description: "Please enter an email address",
+        variant: "error"
+      });
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(inviteEmail)) {
+      toast.show({
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
+        variant: "error"
+      });
+      return;
+    }
+
+    setInviting(true);
+
+    try {
+      const response = await fetch("/api/members.invite", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          poolId: selectedPoolId,
+          email: inviteEmail,
+          role: inviteRole
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to invite member");
+      }
+
+      toast.show({
+        title: "Success",
+        description: data.message || "Member invited successfully",
+        variant: "success"
+      });
+
+      // Refresh the members list
+      if (user) {
+        await fetchPoolsAndMembers(user.id);
+      }
+
+      handleCloseInviteModal();
+    } catch (err: any) {
+      console.error("Invite error:", err);
+      toast.show({
+        title: "Error",
+        description: err.message || "Failed to invite member",
+        variant: "error"
+      });
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -127,6 +240,11 @@ export default function PeoplePage() {
 
   const formatRole = (role: string): string => {
     return role.charAt(0).toUpperCase() + role.slice(1);
+  };
+
+  const isPoolOwner = (poolId: string): boolean => {
+    const pool = pools.find(p => p.id === poolId);
+    return pool?.owner_id === user?.id;
   };
 
   if (loading) {
@@ -227,17 +345,28 @@ export default function PeoplePage() {
                   alignItems: 'center',
                   marginBottom: spacing.md
                 }}>
-                  <h3 style={{
-                    fontSize: '18px',
-                    fontWeight: 600,
-                    color: resolvedColors.text.primary,
-                    margin: 0
-                  }}>
-                    {pool.name}
-                  </h3>
-                  <Badge variant="neutral">
-                    {pool.members.length} member{pool.members.length !== 1 ? 's' : ''}
-                  </Badge>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md }}>
+                    <h3 style={{
+                      fontSize: '18px',
+                      fontWeight: 600,
+                      color: resolvedColors.text.primary,
+                      margin: 0
+                    }}>
+                      {pool.name}
+                    </h3>
+                    <Badge variant="neutral">
+                      {pool.members.length} member{pool.members.length !== 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                  {isPoolOwner(pool.id) && (
+                    <Button 
+                      size="sm" 
+                      variant="secondary"
+                      onClick={() => handleOpenInviteModal(pool.id)}
+                    >
+                      + Invite Member
+                    </Button>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
@@ -299,6 +428,82 @@ export default function PeoplePage() {
           ))}
         </div>
       )}
+
+      {/* Invite Member Modal */}
+      <Modal
+        isOpen={inviteModalOpen}
+        onClose={handleCloseInviteModal}
+        size="sm"
+      >
+        <ModalHeader onClose={handleCloseInviteModal}>
+          Invite Member
+        </ModalHeader>
+        <div style={{ padding: spacing.lg }}>
+          <div style={{ marginBottom: spacing.md }}>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: resolvedColors.text.primary,
+              marginBottom: spacing.xs
+            }}>
+              Email Address
+            </label>
+            <Input
+              type="email"
+              placeholder="colleague@example.com"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              disabled={inviting}
+              size="md"
+            />
+          </div>
+          <div style={{ marginBottom: spacing.md }}>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: resolvedColors.text.primary,
+              marginBottom: spacing.xs
+            }}>
+              Role
+            </label>
+            <Select
+              options={roleOptions}
+              value={inviteRole}
+              onChange={(value) => setInviteRole(value)}
+              disabled={inviting}
+              size="md"
+            />
+            <p style={{
+              fontSize: '12px',
+              color: resolvedColors.text.secondary,
+              marginTop: spacing.xs,
+              marginBottom: 0
+            }}>
+              {inviteRole === 'spouse' && 'Full access - can add tasks and manage pool'}
+              {inviteRole === 'colleague' && 'Can add tasks and collaborate'}
+              {inviteRole === 'guest' && 'View only - cannot add tasks'}
+            </p>
+          </div>
+        </div>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            onClick={handleCloseInviteModal}
+            disabled={inviting}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleInviteMember}
+            disabled={inviting || !inviteEmail}
+          >
+            {inviting ? 'Sending...' : 'Send Invite'}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }
