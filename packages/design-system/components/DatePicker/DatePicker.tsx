@@ -166,7 +166,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     display: 'flex',
     alignItems: isMobile ? 'flex-end' : 'center',
     justifyContent: 'center',
-    zIndex: theme.spacing.zIndex.modal,
+    zIndex: theme.zIndex.modal,
   };
 
   // Modal styles (bottom sheet on mobile, centered modal on desktop)
