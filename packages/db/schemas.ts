@@ -22,3 +22,13 @@ export const TodayRespondSchema = z.object({
   action: z.enum(["accept","decline","move"]),
   newDate: z.string().optional()
 });
+
+export const MemberInviteSchema = z.object({
+  poolId: z.string().uuid(),
+  email: z.string().email(),
+  role: z.enum(["spouse","colleague","guest"])
+});
+
+export const EmailAliasCreateSchema = z.object({
+  poolId: z.string().uuid()
+});
