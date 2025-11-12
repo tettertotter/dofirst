@@ -307,7 +307,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && <label htmlFor={inputId} style={labelStyles}>{label}</label>}
 
         {/* Input wrapper */}
-        <div style={wrapperStyles}>
+        <div style={wrapperStyles} suppressHydrationWarning>
           {/* Left icon */}
           {iconLeft && (
             <span style={iconStyles}>
@@ -328,6 +328,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-describedby={describedBy}
             className={className}
             style={inputStyles}
+            suppressHydrationWarning
             {...props}
           />
 

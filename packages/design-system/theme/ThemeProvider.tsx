@@ -59,9 +59,13 @@ export function ThemeProvider({ children, config }: ThemeProviderProps) {
   });
 
   // Resolve actual color scheme (handles 'auto')
-  const [resolvedScheme, setResolvedScheme] = useState<'light' | 'dark'>(() =>
-    resolveColorScheme(colorScheme)
-  );
+  // Always start with 'light' on SSR to prevent hydration mismatches
+  const [resolvedScheme, setResolvedScheme] = useState<'light' | 'dark'>('light');
+
+  // Resolve the actual scheme on mount (client-side only)
+  useEffect(() => {
+    setResolvedScheme(resolveColorScheme(colorScheme));
+  }, []);
 
   // Watch for system color scheme changes when in 'auto' mode
   useEffect(() => {

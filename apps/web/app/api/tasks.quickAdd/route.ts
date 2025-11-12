@@ -1,27 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { QuickAddSchema } from "@todaypool/db/schemas";
-import { createServerClient, getAuthUser } from "../../../lib/supabase-server";
-import { parseInlineEnhanced } from "../../../../../packages/api/parsing-enhanced";
+import { createServerClient } from "../../../lib/supabase-server";
 
 /**
  * POST /api/tasks.quickAdd
  * Body: { poolId, title, description?, priority?, tags?, visibility?, source? }
  */
 export async function POST(req: NextRequest) {
+  console.log('[tasks.quickAdd] POST request received');
   try {
     const body = await req.json();
+    console.log('[tasks.quickAdd] Body:', body);
+
     const parsed = QuickAddSchema.safeParse(body);
     if (!parsed.success) {
+      console.error('[tasks.quickAdd] Validation error:', parsed.error.flatten());
       return NextResponse.json({ error: "invalid_body", details: parsed.error.flatten() }, { status: 400 });
     }
     const { poolId, title, description, priority, tags, visibility } = parsed.data;
 
-    const supabase = createServerClient();
-    const user = await getAuthUser(supabase, req.headers.get("authorization"));
-    if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    console.log('[tasks.quickAdd] Creating server client...');
+    const supabase = await createServerClient();
+    console.log('[tasks.quickAdd] Getting session...');
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('[tasks.quickAdd] Session user:', session?.user?.id || 'none');
+    if (!session?.user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    const user = session.user;
 
     // Verify membership + permission
-    const { data: member } = await supabase
+    const { data: member, error: memberError } = await supabase
       .from("pool_members")
       .select("user_id, can_add")
       .eq("pool_id", poolId)
@@ -31,14 +38,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
 
-    // Parse inline tokens and natural dates
-    const parsedInput = parseInlineEnhanced(title);
-    const cleanTitle = parsedInput.title;
-    const allTags = Array.from(new Set([...(tags || []), ...parsedInput.tags]));
-    const finalPriority = parsedInput.priority ?? priority ?? 3;
-    const dueAt = parsedInput.dueDate ? parsedInput.dueDate.toISOString() : null;
+    // Use title and priority directly (no parsing for now)
+    const cleanTitle = title.trim();
+    const allTags = tags || [];
+    const finalPriority = priority ?? null; // Default to null (Unsorted)
+    const dueAt = null; // No due date parsing for now
 
-    // Create task (prefer due_at; keep due_date null)
+    console.log(`[tasks.quickAdd] Creating task:`, {
+      originalTitle: title,
+      cleanTitle,
+      description,
+      finalPriority,
+      requestPriority: priority
+    });
+
+    // Create task
     const { data: task, error } = await supabase
       .from("tasks")
       .insert({
@@ -53,13 +67,15 @@ export async function POST(req: NextRequest) {
       })
       .select("id")
       .single();
-    if (error) return NextResponse.json({ error: "db_error", details: error.message }, { status: 500 });
+    if (error) {
+      return NextResponse.json({ error: "db_error", details: error.message }, { status: 500 });
+    }
 
     // Insert tags if present
     if (allTags.length) {
       const { data: tagRows } = await supabase
         .from("tags")
-        .select("id")
+        .select("id, name")
         .in("name", allTags)
         .eq("pool_id", poolId);
       const idByName = new Map<string,string>();

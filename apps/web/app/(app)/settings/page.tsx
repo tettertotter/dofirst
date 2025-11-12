@@ -136,6 +136,9 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '48px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -147,20 +150,26 @@ export default function SettingsPage() {
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: spacing.xl }}>
+    <div style={{
+      maxWidth: '1200px',
+      margin: '0 auto',
+      padding: '48px 48px 64px 48px'
+    }}>
+      <div style={{ marginBottom: '48px' }}>
         <h1 style={{
-          fontSize: '24px',
-          fontWeight: 700,
-          color: resolvedColors.text.primary,
+          fontSize: '32px',
+          fontWeight: 600,
           margin: 0,
-          marginBottom: spacing.xs
+          letterSpacing: '-0.02em',
+          marginBottom: '12px'
         }}>
           Settings
         </h1>
         <p style={{
-          fontSize: '14px',
-          color: resolvedColors.text.secondary,
+          fontSize: '15px',
+          fontWeight: 400,
+          opacity: 0.6,
+          lineHeight: 1.5,
           margin: 0
         }}>
           Manage your preferences and account

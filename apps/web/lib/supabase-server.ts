@@ -3,6 +3,7 @@
  * ONLY use these in API routes and Server Components.
  * NEVER import in Client Components.
  */
+import { createServerClient as createSupabaseServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
@@ -29,10 +30,10 @@ export function createAdminClient() {
 
 /**
  * Create a Supabase client for server-side with user auth context.
- * Uses anon key but respects RLS based on user session.
+ * Uses anon key but respects RLS based on user session from cookies.
  * Prefer this for most API operations.
  */
-export function createServerClient() {
+export async function createServerClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
@@ -40,17 +41,30 @@ export function createServerClient() {
     throw new Error("Missing Supabase environment variables");
   }
 
-  return createClient(supabaseUrl, anonKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
+  const cookieStore = await cookies();
+
+  return createSupabaseServerClient(supabaseUrl, anonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          // The `setAll` method was called from a Server Component.
+          // This can be ignored if you have middleware refreshing user sessions.
+        }
+      },
+    },
   });
 }
 
 /**
  * Get the authenticated user from the request.
- * Supports both cookie-based auth (web) and Authorization header (mobile).
+ * Now uses the built-in session management from @supabase/ssr.
  * Returns null if not authenticated.
  */
 export async function getAuthUser(
@@ -67,15 +81,8 @@ export async function getAuthUser(
     }
   }
 
-  // Fall back to cookie-based auth (for web)
-  const cookieStore = await cookies();
-  const authCookie = cookieStore.get("sb-access-token");
-
-  if (!authCookie) {
-    return null;
-  }
-
-  const { data: { user }, error } = await client.auth.getUser(authCookie.value);
+  // Get user from session (cookies handled by SSR package)
+  const { data: { user }, error } = await client.auth.getUser();
 
   if (error || !user) {
     return null;

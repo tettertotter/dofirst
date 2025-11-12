@@ -37,6 +37,11 @@ interface Pool {
   members: PoolMember[];
 }
 
+interface TodayLimit {
+  delegate_id: string;
+  today_limit: number | null;
+}
+
 export default function PeoplePage() {
   const [user, setUser] = useState<any>(null);
   const [pools, setPools] = useState<Pool[]>([]);
@@ -46,6 +51,8 @@ export default function PeoplePage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<string>("spouse");
   const [inviting, setInviting] = useState(false);
+  const [todayLimits, setTodayLimits] = useState<Map<string, TodayLimit>>(new Map());
+  const [updatingLimit, setUpdatingLimit] = useState<string | null>(null);
   const { resolvedColors } = useTheme();
   const toast = useToast();
 
@@ -136,6 +143,24 @@ export default function PeoplePage() {
       });
 
       setPools(poolsWithMembers);
+
+      // Fetch today limits for the current user
+      const { data: limits, error: limitsError } = await supabase
+        .from("today_limits")
+        .select("delegate_id, today_limit")
+        .in("pool_id", poolIds)
+        .eq("owner_id", userId);
+
+      if (!limitsError && limits) {
+        const limitsMap = new Map<string, TodayLimit>();
+        limits.forEach((limit: any) => {
+          limitsMap.set(limit.delegate_id, {
+            delegate_id: limit.delegate_id,
+            today_limit: limit.today_limit
+          });
+        });
+        setTodayLimits(limitsMap);
+      }
     } catch (err) {
       console.error("Failed to fetch pools and members:", err);
       toast.show({
@@ -247,22 +272,83 @@ export default function PeoplePage() {
     return pool?.owner_id === user?.id;
   };
 
+  const handleUpdateTodayLimit = async (poolId: string, delegateId: string, newLimit: number | null) => {
+    setUpdatingLimit(delegateId);
+    try {
+      const response = await fetch("/api/today-limit.update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          poolId,
+          delegateId,
+          todayLimit: newLimit
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update today limit");
+      }
+
+      // Update local state
+      setTodayLimits(prev => {
+        const newMap = new Map(prev);
+        newMap.set(delegateId, {
+          delegate_id: delegateId,
+          today_limit: newLimit
+        });
+        return newMap;
+      });
+
+      const limitText = newLimit === null ? "Unlimited" : newLimit === 0 ? "None" : `${newLimit}`;
+      toast.show({
+        title: "Success",
+        description: `Today limit updated to ${limitText}`,
+        variant: "success"
+      });
+    } catch (err: any) {
+      console.error("Update today limit error:", err);
+      toast.show({
+        title: "Error",
+        description: err.message || "Failed to update today limit",
+        variant: "error"
+      });
+    } finally {
+      setUpdatingLimit(null);
+    }
+  };
+
+  const getTodayLimitLabel = (limit: number | null): string => {
+    if (limit === null) return "Unlimited";
+    if (limit === 0) return "None";
+    return `${limit} task${limit !== 1 ? 's' : ''}`;
+  };
+
   if (loading) {
     return (
-      <div>
-        <div style={{ marginBottom: spacing.xl }}>
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '48px 48px 64px 48px'
+      }}>
+        <div style={{ marginBottom: '48px' }}>
           <h1 style={{
-            fontSize: '24px',
-            fontWeight: 700,
-            color: resolvedColors.text.primary,
+            fontSize: '32px',
+            fontWeight: 600,
             margin: 0,
-            marginBottom: spacing.xs
+            letterSpacing: '-0.02em',
+            marginBottom: '12px'
           }}>
             People
           </h1>
           <p style={{
-            fontSize: '14px',
-            color: resolvedColors.text.secondary,
+            fontSize: '15px',
+            fontWeight: 400,
+            opacity: 0.6,
+            lineHeight: 1.5,
             margin: 0
           }}>
             Manage your pool members and permissions
@@ -288,10 +374,9 @@ export default function PeoplePage() {
   if (!user) {
     return (
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '50vh'
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '48px'
       }}>
         <p style={{ color: resolvedColors.text.secondary }}>
           Please sign in to view pool members
@@ -301,20 +386,26 @@ export default function PeoplePage() {
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: spacing.xl }}>
+    <div style={{
+      maxWidth: '1200px',
+      margin: '0 auto',
+      padding: '48px 48px 64px 48px'
+    }}>
+      <div style={{ marginBottom: '48px' }}>
         <h1 style={{
-          fontSize: '24px',
-          fontWeight: 700,
-          color: resolvedColors.text.primary,
+          fontSize: '32px',
+          fontWeight: 600,
           margin: 0,
-          marginBottom: spacing.xs
+          letterSpacing: '-0.02em',
+          marginBottom: '12px'
         }}>
           People
         </h1>
         <p style={{
-          fontSize: '14px',
-          color: resolvedColors.text.secondary,
+          fontSize: '15px',
+          fontWeight: 400,
+          opacity: 0.6,
+          lineHeight: 1.5,
           margin: 0
         }}>
           {pools.length} pool{pools.length !== 1 ? 's' : ''} • {pools.reduce((sum, p) => sum + p.members.length, 0)} member{pools.reduce((sum, p) => sum + p.members.length, 0) !== 1 ? 's' : ''}
@@ -370,58 +461,92 @@ export default function PeoplePage() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-                  {pool.members.map(member => (
-                    <div
-                      key={member.id}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: spacing.sm,
-                        backgroundColor: resolvedColors.surface.secondary,
-                        borderRadius: '8px'
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div style={{
-                          fontSize: '14px',
-                          fontWeight: 500,
-                          color: resolvedColors.text.primary,
-                          marginBottom: '2px'
-                        }}>
-                          {member.user.email}
-                          {member.user.id === user.id && (
-                            <span style={{
+                  {pool.members.map(member => {
+                    const isCurrentUser = member.user.id === user.id;
+                    const currentLimit = todayLimits.get(member.user.id);
+                    const limitValue = currentLimit?.today_limit ?? 1;
+
+                    const limitOptions: SelectOption[] = [
+                      { value: "unlimited", label: "Unlimited" },
+                      { value: "0", label: "None (0)" },
+                      { value: "1", label: "1 task" },
+                      { value: "2", label: "2 tasks" },
+                      { value: "3", label: "3 tasks" },
+                      { value: "5", label: "5 tasks" },
+                      { value: "10", label: "10 tasks" }
+                    ];
+
+                    return (
+                      <div
+                        key={member.id}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: spacing.sm,
+                          backgroundColor: resolvedColors.surface.secondary,
+                          borderRadius: '8px',
+                          gap: spacing.md
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            color: resolvedColors.text.primary,
+                            marginBottom: '2px'
+                          }}>
+                            {member.user.email}
+                            {isCurrentUser && (
+                              <span style={{
+                                fontSize: '12px',
+                                color: resolvedColors.text.tertiary,
+                                marginLeft: spacing.xs
+                              }}>
+                                (you)
+                              </span>
+                            )}
+                          </div>
+                          {!isCurrentUser && (
+                            <div style={{
                               fontSize: '12px',
-                              color: resolvedColors.text.tertiary,
-                              marginLeft: spacing.xs
+                              color: resolvedColors.text.secondary
                             }}>
-                              (you)
-                            </span>
+                              Today limit: {getTodayLimitLabel(limitValue)}
+                            </div>
                           )}
                         </div>
-                        {member.can_add && (
-                          <div style={{
-                            fontSize: '12px',
-                            color: resolvedColors.text.secondary
-                          }}>
-                            Can add tasks
+
+                        {!isCurrentUser && (
+                          <div style={{ width: '140px' }}>
+                            <Select
+                              options={limitOptions}
+                              value={limitValue === null ? "unlimited" : limitValue.toString()}
+                              onChange={(value) => {
+                                const newLimit = value === "unlimited" ? null : parseInt(value);
+                                handleUpdateTodayLimit(pool.id, member.user.id, newLimit);
+                              }}
+                              disabled={updatingLimit === member.user.id}
+                              size="sm"
+                            />
                           </div>
                         )}
+
+                        <div style={{
+                          display: 'inline-block',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          backgroundColor: getRoleBadgeColor(member.role),
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: '#ffffff',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {formatRole(member.role)}
+                        </div>
                       </div>
-                      <div style={{
-                        display: 'inline-block',
-                        padding: '4px 8px',
-                        borderRadius: '6px',
-                        backgroundColor: getRoleBadgeColor(member.role),
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        color: '#ffffff'
-                      }}>
-                        {formatRole(member.role)}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

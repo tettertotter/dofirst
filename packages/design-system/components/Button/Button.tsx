@@ -144,9 +144,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const { theme, isDark, resolvedColors } = useTheme();
     const isMobile = useIsMobile();
 
-    // Track if component is mounted (client-side) to prevent hydration mismatch
+    // Track client-side mount to prevent hydration mismatch
     const [isMounted, setIsMounted] = useState(false);
-
     useEffect(() => {
       setIsMounted(true);
     }, []);
@@ -327,7 +326,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <>
-        {/* Inject CSS with working pseudo-classes (client-side only to prevent hydration mismatch) */}
+        {/* Inject CSS with working pseudo-classes - only on client to prevent hydration mismatch */}
         {isMounted && (
           <style>
             {buttonCSS}
@@ -364,7 +363,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           )}
 
           {/* Button text */}
-          {children && <span>{children}</span>}
+          {children && (
+            <span style={{ display: 'flex', alignItems: 'center', lineHeight: 1 }}>
+              {children}
+            </span>
+          )}
 
           {/* Right icon */}
           {!loading && iconRight && (

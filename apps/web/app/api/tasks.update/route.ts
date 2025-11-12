@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get authenticated user
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const user = await getAuthUser(supabase);
 
     if (!user) {

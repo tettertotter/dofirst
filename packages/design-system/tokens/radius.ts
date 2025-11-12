@@ -56,25 +56,25 @@ export const radius = {
  * Following Linear's systematic 8/12/16px approach
  */
 export const componentRadius = {
-  // Buttons - PILL (Fully Rounded)
+  // Buttons - 8px (Linear Standard)
   button: {
-    default: radius.full,   // Standard buttons (pill) ⭐ Friendly, approachable
-    large: radius.full,     // Large CTAs (pill) - consistent
-    pill: radius.full,      // Pill buttons (fully rounded)
+    default: radius.md,     // Standard buttons (8px) ⭐ Professional, modern
+    large: radius.md,       // Large CTAs (8px) - consistent
+    pill: radius.full,      // Pill buttons (fully rounded) - special case only
   },
 
-  // Input fields - PILL (Fully Rounded)
+  // Input fields - 8px (Linear Standard)
   input: {
-    default: radius.full,   // Text inputs (pill) ⭐ Matches buttons
-    large: radius.full,     // Large inputs (pill) - consistent
-    textarea: radius.xl,    // Textareas (16px) - pills look weird on tall rectangles
+    default: radius.md,     // Text inputs (8px) ⭐ Matches buttons
+    large: radius.md,       // Large inputs (8px) - consistent
+    textarea: radius.lg,    // Textareas (12px) - consistent with cards
   },
 
-  // Cards and containers - 16px (Standard)
+  // Cards and containers - 12px (Linear Standard)
   card: {
-    default: radius.xl,     // Standard cards (16px) ⭐ Universal consistency
-    large: radius.xl,       // Feature cards (16px)
-    compact: radius.xl,     // Compact cards (16px)
+    default: radius.lg,     // Standard cards (12px) ⭐ Linear standard
+    large: radius.lg,       // Feature cards (12px)
+    compact: radius.lg,     // Compact cards (12px)
   },
 
   // Modals and overlays - 16px (Standard)
@@ -84,40 +84,40 @@ export const componentRadius = {
     sheet: radius.xl,       // Bottom sheets (16px top corners only)
   },
 
-  // Badges and tags - PILL (Fully Rounded)
+  // Badges and tags - 8px (Linear Standard)
   badge: {
-    default: radius.full,   // Standard badges (pill) ⭐ Matches buttons
-    rounded: radius.full,   // Rounded badges (pill)
-    pill: radius.full,      // Pill badges (fully rounded)
+    default: radius.md,     // Standard badges (8px) ⭐ Matches buttons
+    rounded: radius.md,     // Rounded badges (8px)
+    pill: radius.full,      // Pill badges (fully rounded) - special case
   },
 
   // Avatars
   avatar: {
-    square: radius.xl,      // Rounded square (16px) ⭐ Universal standard
-    rounded: radius.xl,     // More rounded (16px)
+    square: radius.md,      // Rounded square (8px) ⭐ Matches buttons
+    rounded: radius.md,     // More rounded (8px)
     circle: radius.full,    // Circle (fully rounded)
   },
 
-  // Tooltips and popovers - 16px
+  // Tooltips and popovers - 12px
   popover: {
-    default: radius.xl,     // Tooltips, small popovers (16px)
-    large: radius.xl,       // Large popovers (16px)
-    menu: radius.xl,        // Dropdown menus (16px) - matches Select
+    default: radius.lg,     // Tooltips, small popovers (12px)
+    large: radius.lg,       // Large popovers (12px)
+    menu: radius.lg,        // Dropdown menus (12px) - matches cards
   },
 
-  // Images - 16px
+  // Images - 8px (Linear Standard)
   image: {
-    default: radius.xl,     // Standard images (16px) ⭐ Universal standard
-    thumbnail: radius.xl,   // Thumbnails (16px) - consistent
+    default: radius.md,     // Standard images (8px) ⭐ Linear standard
+    thumbnail: radius.md,   // Thumbnails (8px) - consistent
     avatar: radius.full,    // Avatar images (circle)
-    hero: radius.xl,        // Hero images (16px)
+    hero: radius.lg,        // Hero images (12px) - larger context
   },
 
-  // Alerts and notifications - 16px
+  // Alerts and notifications - 12px
   alert: {
-    default: radius.xl,     // Standard alerts (16px)
-    inline: radius.xl,      // Inline alerts (16px)
-    toast: radius.xl,       // Toast notifications (16px)
+    default: radius.lg,     // Standard alerts (12px)
+    inline: radius.lg,      // Inline alerts (12px)
+    toast: radius.lg,       // Toast notifications (12px)
   },
 
   // Progress indicators
@@ -129,17 +129,17 @@ export const componentRadius = {
 
   // Form elements
   form: {
-    checkbox: radius.xs,    // Checkboxes (4px) - too small for 16px
+    checkbox: radius.xs,    // Checkboxes (4px) - too small for 8px
     radio: radius.full,     // Radio buttons (full round)
     toggle: radius.full,    // Toggle switches (pill)
-    select: radius.xl,      // Select dropdowns (16px) ⭐ Matches inputs
+    select: radius.md,      // Select dropdowns (8px) ⭐ Matches inputs
   },
 
   // Tabs and navigation
   tabs: {
-    default: radius.xl,     // Standard tabs (16px)
-    pill: radius.full,      // Pill-style tabs (full round)
-    enclosed: radius.xl,    // Enclosed tabs (16px)
+    default: radius.md,     // Standard tabs (8px)
+    pill: radius.full,      // Pill-style tabs (full round) - special case
+    enclosed: radius.md,    // Enclosed tabs (8px)
   },
 
   // Dividers (rarely rounded)
@@ -150,14 +150,14 @@ export const componentRadius = {
 
   // Accordion
   accordion: {
-    item: radius.xl,        // Accordion items (16px)
-    compact: radius.xl,     // Compact accordion (16px)
+    item: radius.lg,        // Accordion items (12px) - matches cards
+    compact: radius.lg,     // Compact accordion (12px)
   },
 
   // Menu items
   menu: {
-    container: radius.xl,   // Menu container (16px) - matches Select dropdown
-    item: radius.xl,        // Menu items (16px)
+    container: radius.lg,   // Menu container (12px) - matches cards
+    item: radius.md,        // Menu items (8px) - matches buttons
   },
 } as const;
 

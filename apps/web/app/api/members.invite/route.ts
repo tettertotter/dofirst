@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const { poolId, email, role } = parsed.data;
 
     // Get authenticated user
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const user = await getAuthUser(supabase);
 
     if (!user) {

@@ -5,7 +5,7 @@ export const QuickAddSchema = z.object({
   title: z.string().min(1).max(300),
   description: z.string().max(5000).optional(),
   visibility: z.enum(["owner_only","household","work","public"]).optional(),
-  priority: z.number().int().min(1).max(5).optional(),
+  priority: z.number().int().min(1).max(10).nullable().optional(),
   tags: z.array(z.string().min(1).max(40)).optional()
 });
 
@@ -50,4 +50,16 @@ export const TaskDeleteSchema = z.object({
 export const PoolCreateSchema = z.object({
   name: z.string().min(1).max(100),
   timezone: z.string().optional()
+});
+
+export const TodayLimitUpdateSchema = z.object({
+  poolId: z.string().uuid(),
+  delegateId: z.string().uuid(),
+  todayLimit: z.number().int().min(0).nullable() // null = unlimited, 0 = none, 1+ = specific limit
+});
+
+export const PriorityLabelUpdateSchema = z.object({
+  poolId: z.string().uuid(),
+  priorityNumber: z.number().int().min(1),
+  label: z.string().min(1).max(50)
 });

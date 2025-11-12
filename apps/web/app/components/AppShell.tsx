@@ -11,13 +11,13 @@ export function AppShell({ children }:{ children: React.ReactNode }) {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+    <div className="app-shell" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
       <TopAppBar onOpenQuickAdd={() => setOpen(true)} />
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '220px 1fr', gap: isMobile ? 0 : spacing.lg, padding: isMobile ? spacing.sm : spacing.lg }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {!isMobile && <SideNav />}
-        <main role="main" style={{ minHeight: '60vh' }}>{children}</main>
+        <main role="main" style={{ flex: 1, overflowY: 'auto' }}>{children}</main>
       </div>
-      {isMobile && <BottomNav />}
+      {isMobile && <BottomNav onOpenQuickAdd={() => setOpen(true)} />}
       <QuickAddSheet open={open} onClose={() => setOpen(false)} />
     </div>
   );

@@ -1,14 +1,30 @@
 /* Baseline reset and typography for professional, consistent look */
 * { box-sizing: border-box; }
 html, body { height: 100%; }
+
+/* Light mode (default) */
 body {
   margin: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--tp-surface, #fafafa);
-  color: var(--tp-text, #111827);
+  background: oklch(98% 0.005 270);
+  color: oklch(20% 0.02 270);
 }
+
+/* Dark mode via class (ThemeProvider sets this) */
+.dark body,
+body.dark,
+html.dark body {
+  background: oklch(12% 0.01 270);
+  color: oklch(98% 0.005 270);
+}
+
+.app-shell {
+  background: inherit;
+  color: inherit;
+}
+
 a { color: inherit; text-decoration: none; }
 button { font: inherit; }
 :focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }

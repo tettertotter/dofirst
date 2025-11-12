@@ -4,13 +4,14 @@
  */
 "use client";
 
-import { createClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 
-let supabaseClient: ReturnType<typeof createClient> | null = null;
+let supabaseClient: ReturnType<typeof createBrowserClient> | null = null;
 
 /**
  * Get or create a Supabase client for browser use.
  * Uses anon key, all queries respect RLS.
+ * Automatically manages cookies for server-side auth.
  */
 export function getSupabaseClient() {
   if (supabaseClient) {
@@ -24,13 +25,7 @@ export function getSupabaseClient() {
     throw new Error("Missing Supabase public environment variables");
   }
 
-  supabaseClient = createClient(supabaseUrl, anonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
-    }
-  });
+  supabaseClient = createBrowserClient(supabaseUrl, anonKey);
 
   return supabaseClient;
 }

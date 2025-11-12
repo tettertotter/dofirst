@@ -341,7 +341,7 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(
       border: `1px solid ${resolvedColors.border.default}`,
       borderRadius: theme.radius.lg,  // 12px (was radius.md = 8px) ⭐ Match card styling
       boxShadow: isDark ? theme.shadows.dark.lg : theme.shadows.light.lg,  // Use dark shadow in dark mode ⭐
-      zIndex: theme.zIndex.dropdown,
+      zIndex: theme.zIndex.popover,  // Use popover z-index (1400) to render above modals (1300)
       animation: 'selectDropdownOpen 0.15s ease-out',
     };
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerClient, getAuthUser } from '../../../lib/supabase-server';
-import { createNotificationAdapter } from '@todaypool/notifications';
+import { createNotificationAdapter } from '@todaypool/notifications/web';
 import { computeNextTimes, DEFAULT_CADENCE, type QuietHours, type Cadence } from '@todaypool/nagging';
 import { createLogger } from '@todaypool/logging';
 import { withRateLimit, RateLimits } from '@todaypool/rate-limit';
@@ -56,7 +56,7 @@ async function handleSnooze(req: NextRequest) {
     const { taskId, minutes, preset, timestamp } = parsed.data;
 
     // Get authenticated user
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const authHeader = req.headers.get('authorization');
     const user = await getAuthUser(supabase, authHeader);
 

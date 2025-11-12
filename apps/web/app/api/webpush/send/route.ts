@@ -35,7 +35,7 @@ const SendPushSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const authHeader = req.headers.get("authorization");
     const user = await getAuthUser(supabase, authHeader);
 

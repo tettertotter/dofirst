@@ -4,8 +4,6 @@
  */
 
 import { NotificationAdapter, getPlatform, Platform } from './types';
-import { IOSNotificationAdapter } from './ios-adapter';
-import { AndroidNotificationAdapter } from './android-adapter';
 import { WebNotificationAdapter } from './web-adapter';
 
 /**
@@ -23,15 +21,19 @@ import { WebNotificationAdapter } from './web-adapter';
  * await notifications.schedule(taskId, times, payload);
  * ```
  */
-export function createNotificationAdapter(apiUrl?: string): NotificationAdapter {
+export async function createNotificationAdapter(apiUrl?: string): Promise<NotificationAdapter> {
   const platform = getPlatform();
 
   switch (platform) {
-    case 'ios':
+    case 'ios': {
+      const { IOSNotificationAdapter } = await import('./ios-adapter');
       return new IOSNotificationAdapter();
+    }
 
-    case 'android':
+    case 'android': {
+      const { AndroidNotificationAdapter } = await import('./android-adapter');
       return new AndroidNotificationAdapter();
+    }
 
     case 'web':
       return new WebNotificationAdapter(apiUrl);
@@ -57,22 +59,26 @@ export function createNotificationAdapter(apiUrl?: string): NotificationAdapter 
  * }, []);
  * ```
  */
-export function initializeNotifications(): void {
+export async function initializeNotifications(): Promise<void> {
   const platform = getPlatform();
 
   try {
     switch (platform) {
-      case 'ios':
+      case 'ios': {
+        const { IOSNotificationAdapter } = await import('./ios-adapter');
         // Setup action categories for iOS
         IOSNotificationAdapter.setupActionCategories();
         console.log('[NotificationFactory] iOS notifications initialized');
         break;
+      }
 
-      case 'android':
+      case 'android': {
+        const { AndroidNotificationAdapter } = await import('./android-adapter');
         // Setup notification channels for Android
         AndroidNotificationAdapter.setupNotificationChannels();
         console.log('[NotificationFactory] Android notifications initialized');
         break;
+      }
 
       case 'web':
         // Web notifications are initialized on-demand when user subscribes
@@ -95,7 +101,7 @@ export async function getNotificationStatus(): Promise<{
   details?: any;
 }> {
   const platform = getPlatform();
-  const adapter = createNotificationAdapter();
+  const adapter = await createNotificationAdapter();
 
   const hasPermission = await adapter.hasPermission();
 

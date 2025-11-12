@@ -5,6 +5,7 @@
  */
 
 import React from "react";
+import { Button, Badge, spacing, useTheme } from "@todaypool/design-system";
 
 export interface Proposal {
   id: string;
@@ -29,17 +30,9 @@ export interface ProposalCardProps {
   onMove: (proposalId: string) => void;
   /** Current user ID */
   currentUserId: string;
-  /** Loading state */
-  loading?: boolean;
+  /** Disabled state (e.g., during loading) */
+  disabled?: boolean;
 }
-
-const priorityColors: Record<number, string> = {
-  1: "#ef4444", // Red
-  2: "#f97316", // Orange
-  3: "#3b82f6", // Blue
-  4: "#6b7280", // Gray
-  5: "#9ca3af"  // Light gray
-};
 
 const priorityLabels: Record<number, string> = {
   1: "Urgent",
@@ -55,20 +48,33 @@ export function ProposalCard({
   onDecline,
   onMove,
   currentUserId,
-  loading = false
+  disabled = false
 }: ProposalCardProps) {
+  const { theme, resolvedColors } = useTheme();
+
   const isProposer = proposal.proposed_by === currentUserId;
   const isRecipient = proposal.proposed_for === currentUserId;
   const canRespond = isRecipient && proposal.status === "proposed";
 
-  const statusColors: Record<string, { bg: string; text: string; border: string }> = {
-    proposed: { bg: "#fef3c7", text: "#92400e", border: "#fde68a" },
-    accepted: { bg: "#d1fae5", text: "#065f46", border: "#a7f3d0" },
-    declined: { bg: "#fee2e2", text: "#991b1b", border: "#fecaca" },
-    moved: { bg: "#e0e7ff", text: "#3730a3", border: "#c7d2fe" }
+  // Map status to Badge variant
+  const statusVariantMap: Record<string, "warning" | "success" | "error" | "info"> = {
+    proposed: "warning",
+    accepted: "success",
+    declined: "error",
+    moved: "info"
   };
 
-  const statusColor = statusColors[proposal.status] || statusColors.proposed;
+  // Map priority to color (using theme colors instead of hardcoded hex)
+  const getPriorityColor = (priority: number): string => {
+    switch (priority) {
+      case 1: return theme.colors.error[500];    // Urgent - red
+      case 2: return theme.colors.warning[500];  // High - orange
+      case 3: return theme.colors.primary[500];  // Medium - blue
+      case 4: return theme.colors.gray[700];     // Low - dark gray
+      case 5: return theme.colors.gray[400];     // Very Low - light gray
+      default: return theme.colors.gray[500];
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -94,82 +100,91 @@ export function ProposalCard({
 
   return (
     <div
-      className="proposal-card"
       style={{
-        background: "#fff",
-        border: "1px solid #e5e5e5",
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 12,
-        transition: "box-shadow 0.2s ease"
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = "none";
+        background: resolvedColors.surface.default,
+        border: `1px solid ${resolvedColors.border.default}`,
+        borderRadius: theme.componentRadius.card.default,
+        padding: spacing.md,
+        marginBottom: spacing.sm,
+        transition: `all ${theme.transition.card.value}`,
+        boxShadow: theme.shadows.light.sm,
       }}
     >
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: spacing.sm,
+        gap: spacing.sm
+      }}>
         <div style={{ flex: 1 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0, marginBottom: 4 }}>
+          <h3 style={{
+            fontSize: theme.typography.sizes.base.fontSize,
+            fontWeight: theme.typography.weights.semibold,
+            margin: 0,
+            marginBottom: spacing.xs,
+            color: resolvedColors.text.primary
+          }}>
             {proposal.task_title}
           </h3>
           {proposal.task_description && (
-            <p style={{ fontSize: 14, color: "#666", margin: 0, lineHeight: 1.5 }}>
+            <p style={{
+              fontSize: theme.typography.sizes.sm.fontSize,
+              color: resolvedColors.text.secondary,
+              margin: 0,
+              lineHeight: 1.5
+            }}>
               {proposal.task_description}
             </p>
           )}
         </div>
 
         {/* Status Badge */}
-        <div
-          style={{
-            padding: "4px 10px",
-            borderRadius: 12,
-            fontSize: 12,
-            fontWeight: 500,
-            background: statusColor.bg,
-            color: statusColor.text,
-            border: `1px solid ${statusColor.border}`,
-            whiteSpace: "nowrap",
-            marginLeft: 12
-          }}
+        <Badge
+          variant={statusVariantMap[proposal.status] || "warning"}
+          size="sm"
         >
           {proposal.status.charAt(0).toUpperCase() + proposal.status.slice(1)}
-        </div>
+        </Badge>
       </div>
 
       {/* Meta Info */}
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12, fontSize: 13, color: "#666" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      <div style={{
+        display: "flex",
+        gap: spacing.sm,
+        flexWrap: "wrap",
+        marginBottom: spacing.sm,
+        fontSize: theme.typography.sizes.sm.fontSize,
+        color: resolvedColors.text.secondary
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: spacing.xs }}>
           <span>📅</span>
           <span>{formatDate(proposal.proposed_date)}</span>
         </div>
 
         {proposal.task_priority && (
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: spacing.xs }}>
             <span
               style={{
                 width: 8,
                 height: 8,
                 borderRadius: "50%",
-                background: priorityColors[proposal.task_priority]
+                background: getPriorityColor(proposal.task_priority)
               }}
             />
             <span>{priorityLabels[proposal.task_priority]}</span>
           </div>
         )}
 
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: spacing.xs }}>
           <span>👤</span>
           <span>
             {isProposer ? "You proposed" : `Proposed by ${proposal.proposer_email || "Unknown"}`}
           </span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: spacing.xs }}>
           <span>🕐</span>
           <span>{formatTime(proposal.proposed_at)}</span>
         </div>
@@ -177,84 +192,42 @@ export function ProposalCard({
 
       {/* Actions */}
       {canRespond && (
-        <div style={{ display: "flex", gap: 8, marginTop: 12, paddingTop: 12, borderTop: "1px solid #e5e5e5" }}>
-          <button
+        <div style={{
+          display: "flex",
+          gap: spacing.xs,
+          marginTop: spacing.sm,
+          paddingTop: spacing.sm,
+          borderTop: `1px solid ${resolvedColors.border.default}`
+        }}>
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => onAccept(proposal.id)}
-            disabled={loading}
-            style={{
-              flex: 1,
-              padding: "8px 16px",
-              borderRadius: 8,
-              border: "none",
-              background: "#22c55e",
-              color: "#fff",
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.6 : 1,
-              transition: "all 0.15s ease"
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) e.currentTarget.style.background = "#16a34a";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#22c55e";
-            }}
+            disabled={disabled}
+            style={{ flex: 1 }}
           >
             ✓ Accept
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => onDecline(proposal.id)}
-            disabled={loading}
-            style={{
-              flex: 1,
-              padding: "8px 16px",
-              borderRadius: 8,
-              border: "1px solid #e5e5e5",
-              background: "#fff",
-              color: "#666",
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.6 : 1,
-              transition: "all 0.15s ease"
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) e.currentTarget.style.background = "#f5f5f5";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#fff";
-            }}
+            disabled={disabled}
+            style={{ flex: 1 }}
           >
             × Decline
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => onMove(proposal.id)}
-            disabled={loading}
-            style={{
-              flex: 1,
-              padding: "8px 16px",
-              borderRadius: 8,
-              border: "1px solid #e5e5e5",
-              background: "#fff",
-              color: "#666",
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.6 : 1,
-              transition: "all 0.15s ease"
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) e.currentTarget.style.background = "#f5f5f5";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#fff";
-            }}
+            disabled={disabled}
+            style={{ flex: 1 }}
           >
             → Move
-          </button>
+          </Button>
         </div>
       )}
 
@@ -262,12 +235,12 @@ export function ProposalCard({
       {!canRespond && isRecipient && proposal.status !== "proposed" && (
         <div
           style={{
-            marginTop: 12,
-            padding: 8,
-            borderRadius: 6,
-            background: "#f5f5f5",
-            fontSize: 13,
-            color: "#666"
+            marginTop: spacing.sm,
+            padding: spacing.xs,
+            borderRadius: theme.componentRadius.badge.default,
+            background: resolvedColors.surface.subtle,
+            fontSize: theme.typography.sizes.sm.fontSize,
+            color: resolvedColors.text.secondary
           }}
         >
           You {proposal.status} this proposal
@@ -277,12 +250,12 @@ export function ProposalCard({
       {isProposer && !isRecipient && (
         <div
           style={{
-            marginTop: 12,
-            padding: 8,
-            borderRadius: 6,
-            background: "#f5f5f5",
-            fontSize: 13,
-            color: "#666"
+            marginTop: spacing.sm,
+            padding: spacing.xs,
+            borderRadius: theme.componentRadius.badge.default,
+            background: resolvedColors.surface.subtle,
+            fontSize: theme.typography.sizes.sm.fontSize,
+            color: resolvedColors.text.secondary
           }}
         >
           Waiting for recipient response
