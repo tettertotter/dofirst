@@ -92,6 +92,11 @@ export default function PoolPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
+  // Swipe gesture state
+  const [swipeTaskId, setSwipeTaskId] = useState<string | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [swipeStartX, setSwipeStartX] = useState(0);
+
   // Drag-and-drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -678,7 +683,44 @@ export default function PoolPage() {
     }
   };
 
-  // Sortable task card component with drag handle
+  // Swipe gesture handlers
+  const handleSwipeStart = (e: React.MouseEvent | React.TouchEvent, taskId: string) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    setSwipeTaskId(taskId);
+    setSwipeStartX(clientX);
+    setSwipeOffset(0);
+  };
+
+  const handleSwipeMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!swipeTaskId) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const delta = clientX - swipeStartX;
+    setSwipeOffset(delta);
+  };
+
+  const handleSwipeEnd = () => {
+    if (Math.abs(swipeOffset) > 100 && swipeTaskId) {
+      // Swipe threshold reached - trigger action based on direction
+      if (swipeOffset > 0) {
+        // Swipe right - mark as complete
+        const task = tasks.find(t => t.id === swipeTaskId);
+        if (task) {
+          handleComplete(task.id);
+        }
+      } else {
+        // Swipe left - snooze
+        const task = tasks.find(t => t.id === swipeTaskId);
+        if (task) {
+          handleQuickSnooze(task.id, 60); // 1 hour default
+        }
+      }
+    }
+    setSwipeTaskId(null);
+    setSwipeOffset(0);
+    setSwipeStartX(0);
+  };
+
+  // Sortable task card component with drag handle and swipe
   function SortableTaskCard({ task }: { task: Task }) {
     const {
       attributes,
@@ -689,10 +731,21 @@ export default function PoolPage() {
       isDragging,
     } = useSortable({ id: task.id });
 
+    const dueInfo = formatDueDate(task.due_at);
+    const isLoading = actionLoading === task.id;
+    const isSwipingThis = swipeTaskId === task.id;
+    const currentSwipeOffset = isSwipingThis ? swipeOffset : 0;
+
+    // Combine drag-and-drop transform with swipe offset
+    const combinedTransform = transform
+      ? `${CSS.Transform.toString(transform)} translateX(${currentSwipeOffset}px)`
+      : `translateX(${currentSwipeOffset}px)`;
+
     const style: React.CSSProperties = {
-      transform: CSS.Transform.toString(transform),
-      transition,
+      transform: combinedTransform,
+      transition: isSwipingThis ? 'none' : transition,
       opacity: isDragging ? 0.5 : 1,
+      position: 'relative',
     };
 
     const dragHandleStyle: React.CSSProperties = {
@@ -706,12 +759,78 @@ export default function PoolPage() {
       userSelect: 'none',
     };
 
-    const dueInfo = formatDueDate(task.due_at);
-    const isLoading = actionLoading === task.id;
+    // Prevent swipe from starting on buttons or drag handle
+    const stopSwipePropagation = (e: React.MouseEvent | React.TouchEvent) => {
+      e.stopPropagation();
+    };
 
     return (
       <div ref={setNodeRef} style={style}>
-        <Card>
+        {/* Swipe action indicators */}
+        {isSwipingThis && (
+          <>
+            {/* Right swipe indicator (Complete) */}
+            <div style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: '100px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#22c55e',
+              opacity: Math.min(Math.abs(currentSwipeOffset) / 100, 1),
+              borderRadius: '12px 0 0 12px',
+              zIndex: 0,
+            }}>
+              <span style={{ color: 'white', fontSize: '24px' }}>✓</span>
+            </div>
+
+            {/* Left swipe indicator (Snooze) */}
+            <div style={{
+              position: 'absolute',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: '100px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#f59e0b',
+              opacity: Math.min(Math.abs(currentSwipeOffset) / 100, 1),
+              borderRadius: '0 12px 12px 0',
+              zIndex: 0,
+            }}>
+              <span style={{ color: 'white', fontSize: '24px' }}>💤</span>
+            </div>
+          </>
+        )}
+
+        <Card
+          onMouseDown={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('button') || target.closest('[data-drag-handle]')) {
+              return;
+            }
+            handleSwipeStart(e, task.id);
+          }}
+          onTouchStart={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('button') || target.closest('[data-drag-handle]')) {
+              return;
+            }
+            handleSwipeStart(e, task.id);
+          }}
+          onMouseMove={handleSwipeMove}
+          onTouchMove={handleSwipeMove}
+          onMouseUp={handleSwipeEnd}
+          onTouchEnd={handleSwipeEnd}
+          onMouseLeave={() => {
+            if (isSwipingThis) handleSwipeEnd();
+          }}
+          style={{ zIndex: 1, position: 'relative' }}
+        >
           <div style={{ padding: spacing.md, display: 'flex' }}>
             {/* Drag handle - ONLY draggable element */}
             <div
@@ -719,6 +838,8 @@ export default function PoolPage() {
               {...listeners}
               data-drag-handle="true"
               style={dragHandleStyle}
+              onMouseDown={stopSwipePropagation}
+              onTouchStart={stopSwipePropagation}
             >
               ⋮⋮
             </div>
@@ -769,12 +890,16 @@ export default function PoolPage() {
               )}
 
               {/* Actions */}
-              <div style={{
-                display: 'flex',
-                gap: spacing.sm,
-                marginTop: spacing.md,
-                flexWrap: 'wrap'
-              }}>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: spacing.sm,
+                  marginTop: spacing.md,
+                  flexWrap: 'wrap'
+                }}
+                onMouseDown={stopSwipePropagation}
+                onTouchStart={stopSwipePropagation}
+              >
                 <Button
                   onClick={() => handleOpenEditModal(task)}
                   variant="secondary"
