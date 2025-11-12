@@ -708,10 +708,10 @@ export default function PoolPage() {
           handleComplete(task.id);
         }
       } else {
-        // Swipe left - snooze
+        // Swipe left - open snooze modal to let user choose duration
         const task = tasks.find(t => t.id === swipeTaskId);
         if (task) {
-          handleQuickSnooze(task.id, 60); // 1 hour default
+          openSnoozeModal(task);
         }
       }
     }
@@ -769,41 +769,45 @@ export default function PoolPage() {
         {/* Swipe action indicators */}
         {isSwipingThis && (
           <>
-            {/* Right swipe indicator (Complete) */}
-            <div style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: '100px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#22c55e',
-              opacity: Math.min(Math.abs(currentSwipeOffset) / 100, 1),
-              borderRadius: '12px 0 0 12px',
-              zIndex: 0,
-            }}>
-              <span style={{ color: 'white', fontSize: '24px' }}>✓</span>
-            </div>
+            {/* Right swipe indicator (Complete) - only show when swiping right */}
+            {currentSwipeOffset > 0 && (
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: '100px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#22c55e',
+                opacity: Math.min(currentSwipeOffset / 100, 1),
+                borderRadius: '12px 0 0 12px',
+                zIndex: 0,
+              }}>
+                <span style={{ color: 'white', fontSize: '24px' }}>✓</span>
+              </div>
+            )}
 
-            {/* Left swipe indicator (Snooze) */}
-            <div style={{
-              position: 'absolute',
-              right: 0,
-              top: 0,
-              bottom: 0,
-              width: '100px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#f59e0b',
-              opacity: Math.min(Math.abs(currentSwipeOffset) / 100, 1),
-              borderRadius: '0 12px 12px 0',
-              zIndex: 0,
-            }}>
-              <span style={{ color: 'white', fontSize: '24px' }}>💤</span>
-            </div>
+            {/* Left swipe indicator (Snooze) - only show when swiping left */}
+            {currentSwipeOffset < 0 && (
+              <div style={{
+                position: 'absolute',
+                right: 0,
+                top: 0,
+                bottom: 0,
+                width: '100px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#f59e0b',
+                opacity: Math.min(Math.abs(currentSwipeOffset) / 100, 1),
+                borderRadius: '0 12px 12px 0',
+                zIndex: 0,
+              }}>
+                <span style={{ color: 'white', fontSize: '24px' }}>💤</span>
+              </div>
+            )}
           </>
         )}
 
