@@ -20,17 +20,42 @@ import {
   type SelectOption
 } from "@todaypool/design-system";
 import { SnoozeChips, SnoozeModal, useSnooze } from "@todaypool/ui";
+import {
+  DndContext,
+  DragOverlay,
+  closestCorners,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragEndEvent,
+  DragOverEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Task {
   id: string;
   title: string;
   description: string | null;
-  priority: number;
+  priority: number | null;
   due_at: string | null;
   status: string;
   visibility: string;
   created_at: string;
   pool_id: string;
+  remind_at?: string | null;
+  alarm_enabled?: boolean;
+  sort_order?: number;
+}
+
+interface PriorityLabel {
+  priority_number: number;
+  label: string;
 }
 
 export default function PoolPage() {
@@ -60,6 +85,21 @@ export default function PoolPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Priority labels and drag-and-drop state
+  const [priorityLabels, setPriorityLabels] = useState<PriorityLabel[]>([]);
+  const [currentPoolId, setCurrentPoolId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+
+  // Drag-and-drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // 5px movement required to start drag
+      },
+    })
+  );
 
   // Propose modal state
   const [proposeDateModalOpen, setProposeDateModalOpen] = useState(false);
@@ -177,11 +217,34 @@ export default function PoolPage() {
       if (error) throw error;
 
       setTasks(data || []);
+
+      // Fetch priority labels for the first pool
+      if (poolIds.length > 0) {
+        await fetchPriorityLabels(poolIds[0]);
+      }
     } catch (err) {
       console.error("Failed to fetch tasks:", err);
       setMessage(`Error: ${err instanceof Error ? err.message : "Failed to load tasks"}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPriorityLabels = async (poolId: string) => {
+    try {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from("priority_labels")
+        .select("priority_number, label")
+        .eq("pool_id", poolId)
+        .order("priority_number", { ascending: true });
+
+      if (error) throw error;
+
+      setPriorityLabels(data || []);
+      setCurrentPoolId(poolId);
+    } catch (err) {
+      console.error("Failed to fetch priority labels:", err);
     }
   };
 
@@ -458,10 +521,12 @@ export default function PoolPage() {
     }
   };
 
-  const getPriorityColor = (priority: number) => {
-    if (priority >= 4) return "#ef4444"; // red
-    if (priority === 3) return "#f59e0b"; // amber
-    return "#6b7280"; // gray
+  const getPriorityColor = (priority: number | null) => {
+    if (priority === null) return "#94a3b8"; // slate for unsorted
+    if (priority === 1) return "#ef4444"; // red for Today
+    if (priority === 2) return "#f59e0b"; // amber for This Week
+    if (priority >= 3 && priority <= 5) return "#3b82f6"; // blue
+    return "#6b7280"; // gray for others
   };
 
   const getPriorityLabel = (priority: number) => {
@@ -495,6 +560,296 @@ export default function PoolPage() {
       return { text: date.toLocaleDateString(), color: "#6b7280" };
     }
   };
+
+  const getPriorityLabelText = (priority: number | null): string => {
+    if (priority === null) return "Unsorted";
+    const label = priorityLabels.find(l => l.priority_number === priority);
+    if (label) return label.label;
+    if (priority === 1) return "Today";
+    if (priority === 2) return "This Week";
+    return `Priority ${priority}`;
+  };
+
+  const groupedTasks = React.useMemo(() => {
+    const groups = new Map<number | null, Task[]>();
+
+    filteredTasks.forEach(task => {
+      const priority = task.priority;
+      if (!groups.has(priority)) {
+        groups.set(priority, []);
+      }
+      groups.get(priority)!.push(task);
+    });
+
+    groups.forEach((taskList, priority) => {
+      taskList.sort((a, b) => {
+        const orderA = a.sort_order ?? 0;
+        const orderB = b.sort_order ?? 0;
+        return orderA - orderB;
+      });
+    });
+
+    const priorityOrder: (number | null)[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, null];
+    return priorityOrder
+      .filter(p => groups.has(p))
+      .map(p => ({
+        priority: p,
+        label: getPriorityLabelText(p),
+        tasks: groups.get(p)!
+      }));
+  }, [filteredTasks, priorityLabels]);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    setOverId(event.over?.id as string || null);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    setActiveId(null);
+    setOverId(null);
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const activeTaskId = active.id as string;
+    const overTaskId = over.id as string;
+
+    // Check if dropping on priority section header
+    const priorityDropMatch = overTaskId.match(/^priority-(\d+|null)$/);
+    if (priorityDropMatch) {
+      const targetPriority = priorityDropMatch[1] === 'null' ? null : Number(priorityDropMatch[1]);
+      await handleReorder(activeTaskId, targetPriority, []);
+      return;
+    }
+
+    // Dropping on another task - calculate new sort orders
+    const activeTask = tasks.find(t => t.id === activeTaskId);
+    const overTask = tasks.find(t => t.id === overTaskId);
+
+    if (!activeTask || !overTask) return;
+
+    const targetPriority = overTask.priority;
+    const zoneTasks = tasks.filter(t => t.priority === targetPriority);
+
+    const updates: { id: string; sort_order: number }[] = [];
+    const overIndex = zoneTasks.findIndex(t => t.id === overTaskId);
+
+    let newOrder = 0;
+    zoneTasks.forEach((task, index) => {
+      if (task.id === activeTaskId) return;
+      if (index === overIndex) {
+        updates.push({ id: activeTaskId, sort_order: newOrder++ });
+      }
+      updates.push({ id: task.id, sort_order: newOrder++ });
+    });
+
+    if (!updates.find(u => u.id === activeTaskId)) {
+      updates.push({ id: activeTaskId, sort_order: newOrder });
+    }
+
+    await handleReorder(activeTaskId, targetPriority, updates);
+  };
+
+  const handleReorder = async (taskId: string, targetPriority: number | null, updates: { id: string; sort_order: number }[]) => {
+    try {
+      const res = await fetch("/api/tasks.reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, targetPriority, updates })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to reorder task");
+      }
+
+      await fetchTasks();
+      setMessage("✓ Task moved successfully");
+      setTimeout(() => setMessage(undefined), 2000);
+    } catch (err) {
+      console.error("Reorder error:", err);
+      setMessage(`Error: ${err instanceof Error ? err.message : "Failed to reorder"}`);
+    }
+  };
+
+  // Sortable task card component with drag handle
+  function SortableTaskCard({ task }: { task: Task }) {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: task.id });
+
+    const style: React.CSSProperties = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    const dragHandleStyle: React.CSSProperties = {
+      cursor: 'grab',
+      touchAction: 'none',
+      padding: spacing.sm,
+      display: 'flex',
+      alignItems: 'center',
+      color: resolvedColors.text.tertiary,
+      fontSize: '20px',
+      userSelect: 'none',
+    };
+
+    const dueInfo = formatDueDate(task.due_at);
+    const isLoading = actionLoading === task.id;
+
+    return (
+      <div ref={setNodeRef} style={style}>
+        <Card>
+          <div style={{ padding: spacing.md, display: 'flex' }}>
+            {/* Drag handle - ONLY draggable element */}
+            <div
+              {...attributes}
+              {...listeners}
+              data-drag-handle="true"
+              style={dragHandleStyle}
+            >
+              ⋮⋮
+            </div>
+
+            {/* Task content */}
+            <div style={{ flex: 1 }}>
+              {/* Header: Title + Priority + Due */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: spacing.sm
+              }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  color: resolvedColors.text.primary,
+                  margin: 0,
+                  flex: 1
+                }}>
+                  {task.title}
+                </h3>
+                <div style={{ display: 'flex', gap: spacing.xs, alignItems: 'center' }}>
+                  <Badge
+                    color={getPriorityColor(task.priority)}
+                    size="sm"
+                  >
+                    {task.priority !== null ? getPriorityLabel(task.priority) : 'Unsorted'}
+                  </Badge>
+                  {dueInfo && (
+                    <Badge color={dueInfo.color} size="sm">
+                      {dueInfo.text}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Description */}
+              {task.description && (
+                <p style={{
+                  fontSize: '14px',
+                  color: resolvedColors.text.secondary,
+                  margin: 0,
+                  marginBottom: spacing.sm
+                }}>
+                  {task.description}
+                </p>
+              )}
+
+              {/* Actions */}
+              <div style={{
+                display: 'flex',
+                gap: spacing.sm,
+                marginTop: spacing.md,
+                flexWrap: 'wrap'
+              }}>
+                <Button
+                  onClick={() => handleOpenEditModal(task)}
+                  variant="secondary"
+                  size="sm"
+                  disabled={isLoading}
+                >
+                  Edit
+                </Button>
+                <Button
+                  onClick={() => handleOpenDeleteModal(task)}
+                  variant="danger"
+                  size="sm"
+                  disabled={isLoading}
+                >
+                  Delete
+                </Button>
+                <SnoozeChips
+                  taskId={task.id}
+                  onQuickSnooze={(id, minutes) => handleQuickSnooze(id, minutes)}
+                  onMoreOptions={(id) => openSnoozeModal(task)}
+                  disabled={isLoading}
+                />
+                <Button
+                  onClick={() => handleProposeForToday(task)}
+                  variant="primary"
+                  size="sm"
+                  disabled={isLoading || proposing}
+                >
+                  {(isLoading || proposing) ? <Spinner size="sm" /> : "📅 Today"}
+                </Button>
+                <Button
+                  onClick={() => handleOpenProposeDateModal(task)}
+                  variant="secondary"
+                  size="sm"
+                  disabled={isLoading || proposing}
+                >
+                  {(isLoading || proposing) ? <Spinner size="sm" /> : "📆 Date"}
+                </Button>
+                {task.status === 'open' && (
+                  <Button
+                    onClick={() => handleStatusTransition(task.id, 'in_progress', '✓ Marked as In Progress')}
+                    variant="primary"
+                    size="sm"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? <Spinner size="sm" /> : "→ In Progress"}
+                  </Button>
+                )}
+                {task.status !== 'done' && task.status !== 'archived' && (
+                  <Button
+                    onClick={() => handleComplete(task.id)}
+                    variant="success"
+                    size="sm"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? <Spinner size="sm" /> : "✓ Done"}
+                  </Button>
+                )}
+                {task.status === 'done' && (
+                  <Button
+                    onClick={() => handleStatusTransition(task.id, 'archived', '✓ Archived')}
+                    variant="secondary"
+                    size="sm"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? <Spinner size="sm" /> : "📦 Archive"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -661,140 +1016,52 @@ export default function PoolPage() {
           </div>
         </Card>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
-          {filteredTasks.map((task) => {
-            const dueInfo = formatDueDate(task.due_at);
-            const isLoading = actionLoading === task.id;
-
-            return (
-              <Card key={task.id}>
-                <div style={{ padding: spacing.md }}>
-                  {/* Header: Title + Priority + Due */}
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: spacing.sm
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
+            {groupedTasks.map(({ priority, label, tasks: priorityTasks }) => (
+              <div key={`priority-${priority}`}>
+                {/* Priority Section Header */}
+                <div
+                  id={`priority-${priority}`}
+                  style={{
+                    padding: spacing.md,
+                    marginBottom: spacing.sm,
+                    borderLeft: `4px solid ${getPriorityColor(priority)}`,
+                    backgroundColor: resolvedColors.surface.secondary,
+                    borderRadius: '8px',
+                  }}
+                >
+                  <h2 style={{
+                    fontSize: '18px',
+                    fontWeight: 600,
+                    color: resolvedColors.text.primary,
+                    margin: 0,
                   }}>
-                    <h3 style={{
-                      fontSize: '16px',
-                      fontWeight: 600,
-                      color: resolvedColors.text.primary,
-                      margin: 0,
-                      flex: 1
-                    }}>
-                      {task.title}
-                    </h3>
-                    <div style={{ display: 'flex', gap: spacing.xs, alignItems: 'center' }}>
-                      <Badge
-                        color={getPriorityColor(task.priority)}
-                        size="sm"
-                      >
-                        {getPriorityLabel(task.priority)}
-                      </Badge>
-                      {dueInfo && (
-                        <Badge color={dueInfo.color} size="sm">
-                          {dueInfo.text}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  {task.description && (
-                    <p style={{
-                      fontSize: '14px',
-                      color: resolvedColors.text.secondary,
-                      margin: 0,
-                      marginBottom: spacing.sm
-                    }}>
-                      {task.description}
-                    </p>
-                  )}
-
-                  {/* Actions: Edit + Delete + Snooze + Status Transitions */}
-                  <div style={{
-                    display: 'flex',
-                    gap: spacing.sm,
-                    marginTop: spacing.md,
-                    flexWrap: 'wrap'
-                  }}>
-                    <Button
-                      onClick={() => handleOpenEditModal(task)}
-                      variant="secondary"
-                      size="sm"
-                      disabled={isLoading}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      onClick={() => handleOpenDeleteModal(task)}
-                      variant="danger"
-                      size="sm"
-                      disabled={isLoading}
-                    >
-                      Delete
-                    </Button>
-                    <SnoozeChips
-                      taskId={task.id}
-                      onQuickSnooze={(id, minutes) => handleQuickSnooze(id, minutes)}
-                      onMoreOptions={(id) => openSnoozeModal(task)}
-                      disabled={isLoading}
-                    />
-                    {/* Proposal buttons */}
-                    <Button
-                      onClick={() => handleProposeForToday(task)}
-                      variant="primary"
-                      size="sm"
-                      disabled={isLoading || proposing}
-                    >
-                      {(isLoading || proposing) ? <Spinner size="sm" /> : "📅 Today"}
-                    </Button>
-                    <Button
-                      onClick={() => handleOpenProposeDateModal(task)}
-                      variant="secondary"
-                      size="sm"
-                      disabled={isLoading || proposing}
-                    >
-                      {(isLoading || proposing) ? <Spinner size="sm" /> : "📆 Date"}
-                    </Button>
-                    {/* Status transition buttons based on current status */}
-                    {task.status === 'open' && (
-                      <Button
-                        onClick={() => handleStatusTransition(task.id, 'in_progress', '✓ Marked as In Progress')}
-                        variant="primary"
-                        size="sm"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? <Spinner size="sm" /> : "→ In Progress"}
-                      </Button>
-                    )}
-                    {task.status !== 'done' && task.status !== 'archived' && (
-                      <Button
-                        onClick={() => handleComplete(task.id)}
-                        variant="success"
-                        size="sm"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? <Spinner size="sm" /> : "✓ Done"}
-                      </Button>
-                    )}
-                    {task.status === 'done' && (
-                      <Button
-                        onClick={() => handleStatusTransition(task.id, 'archived', '✓ Archived')}
-                        variant="secondary"
-                        size="sm"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? <Spinner size="sm" /> : "📦 Archive"}
-                      </Button>
-                    )}
-                  </div>
+                    {label} ({priorityTasks.length})
+                  </h2>
                 </div>
-              </Card>
-            );
-          })}
-        </div>
+
+                {/* Sortable task list */}
+                <SortableContext
+                  items={priorityTasks.map(t => t.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
+                    {priorityTasks.map((task) => (
+                      <SortableTaskCard key={task.id} task={task} />
+                    ))}
+                  </div>
+                </SortableContext>
+              </div>
+            ))}
+          </div>
+        </DndContext>
       )}
 
       {/* Edit Modal */}
