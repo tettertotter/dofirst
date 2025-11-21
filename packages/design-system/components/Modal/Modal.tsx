@@ -128,6 +128,8 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
     ref
   ) => {
     const { theme, isDark, resolvedColors } = useTheme();
+    const isMobile = useIsMobile();
+    const [isCloseHovered, setIsCloseHovered] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
     const modalRef = useRef<HTMLDivElement>(null);
@@ -300,8 +302,6 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
       color: resolvedColors.text.primary,
       margin: 0,
     };
-
-    const [isCloseHovered, setIsCloseHovered] = useState(false);
 
     // Close button styles - 2025 Professional Standards
     const closeButtonStyles: React.CSSProperties = {
