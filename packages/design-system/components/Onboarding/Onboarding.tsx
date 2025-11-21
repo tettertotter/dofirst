@@ -135,7 +135,7 @@ export function Onboarding({
   closeButtonText = 'Get Started',
   allowBack = true,
 }: OnboardingProps) {
-  const theme = useTheme();
+  const { theme } = useTheme();
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [isLoading, setIsLoading] = useState(false);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
@@ -157,7 +157,7 @@ export function Onboarding({
       }
     }
 
-    if (enableHaptics) haptics.light();
+    if (enableHaptics) haptics.selection();
 
     if (isLastStep) {
       if (onComplete) onComplete();
@@ -180,7 +180,7 @@ export function Onboarding({
       }
     }
 
-    if (enableHaptics) haptics.light();
+    if (enableHaptics) haptics.selection();
     setDirection('backward');
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   }, [step, enableHaptics]);
@@ -189,7 +189,7 @@ export function Onboarding({
    * Skip onboarding
    */
   const skip = useCallback(() => {
-    if (enableHaptics) haptics.light();
+    if (enableHaptics) haptics.selection();
     if (onSkip) onSkip();
   }, [enableHaptics, onSkip]);
 
@@ -252,7 +252,7 @@ export function Onboarding({
                     borderRadius: theme.radius.full,
                     background:
                       index <= currentStep
-                        ? theme.colors.blue[500]
+                        ? theme.colors.primary[500]
                         : theme.colors.gray[200],
                     transition: 'background 0.3s ease',
                   }}
@@ -388,7 +388,7 @@ export function Onboarding({
         {!isFirstStep && allowBack && (
           <Button
             onClick={previousStep}
-            variant="outline"
+            variant="secondary"
             size="lg"
             disabled={isLoading}
           >
@@ -401,7 +401,7 @@ export function Onboarding({
           onClick={nextStep}
           size="lg"
           fullWidth
-          isLoading={isLoading}
+          loading={isLoading}
         >
           {step.primaryButtonText || (isLastStep ? closeButtonText : 'Continue')}
         </Button>

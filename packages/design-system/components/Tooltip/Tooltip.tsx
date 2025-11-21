@@ -171,7 +171,7 @@ export function Tooltip({
 
   const triggerRef = useRef<HTMLElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Handle mounting
   useEffect(() => {
@@ -239,7 +239,7 @@ export function Tooltip({
   }, []);
 
   // Clone child and add trigger props
-  const trigger = React.cloneElement(children, {
+  const trigger = React.cloneElement(children as React.ReactElement<any>, {
     ref: triggerRef,
     onMouseEnter: handleMouseEnter,
     onMouseLeave: handleMouseLeave,
@@ -260,7 +260,7 @@ export function Tooltip({
       borderStyle: 'solid',
     };
 
-    const borderColor = isDark ? resolvedColors.surface.tertiary : resolvedColors.text.primary;
+    const borderColor = isDark ? resolvedColors.bg.tertiary : resolvedColors.text.primary;
 
     switch (actualPosition) {
       case 'top':
@@ -309,7 +309,7 @@ export function Tooltip({
     left: `${tooltipPosition.left}px`,
     maxWidth,
     padding: `${theme.spacing[2]} ${theme.spacing.sm}`,  // 8px 16px (was 4px 16px) ⭐ More breathing room
-    backgroundColor: isDark ? resolvedColors.surface.tertiary : resolvedColors.text.primary,
+    backgroundColor: isDark ? resolvedColors.bg.tertiary : resolvedColors.text.primary,
     color: isDark ? resolvedColors.text.primary : theme.colors.gray[0],
     fontFamily: theme.typography.fonts.primary,
     fontSize: theme.typography.sizes.sm.fontSize,

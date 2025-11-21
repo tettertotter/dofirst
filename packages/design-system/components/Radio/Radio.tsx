@@ -147,18 +147,17 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
       width: currentSize.radioSize,
       height: currentSize.radioSize,
       borderRadius: theme.radius.full,
-      border: `2px solid ${
-        error
-          ? theme.colors.error[500]
-          : props.checked
+      border: `2px solid ${error
+        ? theme.colors.error[500]
+        : props.checked
           ? theme.colors.primary[500]
           : resolvedColors.border.default
-      }`,
-      backgroundColor: resolvedColors.surface.primary,
+        }`,
+      backgroundColor: resolvedColors.surface.default,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      transition: `all ${theme.duration.fast} ${theme.easing.easeOut}`,
+      transition: `all ${theme.duration.fast} ${theme.easing.out}`,
     };
 
     // Dot styles

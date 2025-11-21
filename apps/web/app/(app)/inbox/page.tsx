@@ -209,7 +209,7 @@ export default function InboxPage() {
                 <div style={{
                   marginTop: spacing.sm,
                   padding: spacing.sm,
-                  background: resolvedColors.background.secondary,
+                  background: resolvedColors.bg.secondary,
                   borderRadius: '6px',
                   fontSize: '12px',
                   color: resolvedColors.text.secondary
@@ -222,7 +222,7 @@ export default function InboxPage() {
                 <div style={{
                   marginTop: spacing.sm,
                   fontSize: '12px',
-                  color: resolvedColors.text.success
+                  color: resolvedColors.semantic.success
                 }}>
                   ✓ Task created: {submission.created_task_id}
                 </div>

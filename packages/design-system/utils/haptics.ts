@@ -142,7 +142,7 @@ class HapticService {
     if (typeof window.ExpoHaptics !== 'undefined') {
       // @ts-ignore
       const { impactAsync, notificationAsync, ImpactFeedbackStyle, NotificationFeedbackType } =
-        window.ExpoHaptics;
+        (window as any).ExpoHaptics;
 
       switch (pattern) {
         case 'selection':

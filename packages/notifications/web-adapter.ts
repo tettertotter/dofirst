@@ -145,7 +145,7 @@ export class WebNotificationAdapter implements NotificationAdapter {
             { action: 'tomorrowAM', title: 'Tomorrow AM', icon: '/icon-calendar.png' },
           ],
           data: payload,
-        });
+        } as any);
       } else {
         // Fallback to basic Notification API (no actions)
         new Notification(payload.title, {
@@ -293,7 +293,7 @@ export class WebNotificationAdapter implements NotificationAdapter {
       // Subscribe to push
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: this.urlBase64ToUint8Array(vapidPublicKey),
+        applicationServerKey: this.urlBase64ToUint8Array(vapidPublicKey) as any,
       });
 
       // Send subscription to server

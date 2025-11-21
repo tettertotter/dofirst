@@ -30,7 +30,7 @@ export default function SettingsPage() {
   const [pools, setPools] = useState<Pool[]>([]);
   const [loading, setLoading] = useState(true);
   const [poolsLoading, setPoolsLoading] = useState(false);
-  const { resolvedColors, theme, setTheme } = useTheme();
+  const { resolvedColors, isDark, setColorScheme } = useTheme();
 
   // Create pool modal state
   const [createPoolModalOpen, setCreatePoolModalOpen] = useState(false);
@@ -226,7 +226,7 @@ export default function SettingsPage() {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: spacing.sm,
-                      backgroundColor: resolvedColors.surface.secondary,
+                      backgroundColor: resolvedColors.bg.secondary,
                       borderRadius: '8px'
                     }}
                   >
@@ -288,8 +288,8 @@ export default function SettingsPage() {
                 </div>
               </div>
               <Toggle
-                checked={theme === 'dark'}
-                onChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                checked={isDark}
+                onChange={(checked) => setColorScheme(checked ? 'dark' : 'light')}
               />
             </div>
           </CardContent>
@@ -340,11 +340,11 @@ export default function SettingsPage() {
 
       {/* Create Pool Modal */}
       <Modal
-        isOpen={createPoolModalOpen}
+        open={createPoolModalOpen}
         onClose={handleCloseCreatePoolModal}
         size="sm"
       >
-        <ModalHeader onClose={handleCloseCreatePoolModal}>
+        <ModalHeader>
           Create Pool
         </ModalHeader>
         <div style={{ padding: spacing.lg }}>

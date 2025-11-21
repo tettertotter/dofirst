@@ -22,8 +22,8 @@ function getIdentifier(req: NextRequest): string {
   // Fall back to IP address
   const forwarded = req.headers.get('x-forwarded-for');
   const ip = forwarded ? forwarded.split(',')[0].trim() :
-             req.headers.get('x-real-ip') ||
-             'unknown';
+    req.headers.get('x-real-ip') ||
+    'unknown';
 
   return `ip:${ip}`;
 }
@@ -48,11 +48,11 @@ function withRateLimitHeaders(
  */
 export function withRateLimit(
   config: RateLimitConfig
-): <T>(handler: (req: NextRequest) => Promise<NextResponse<T>>) => (req: NextRequest) => Promise<NextResponse<T>> {
+): (handler: (req: NextRequest) => Promise<NextResponse<any>>) => (req: NextRequest) => Promise<NextResponse<any>> {
   const limiter = new RateLimiter(config);
 
-  return <T>(handler: (req: NextRequest) => Promise<NextResponse<T>>) => {
-    return async (req: NextRequest): Promise<NextResponse<T>> => {
+  return (handler: (req: NextRequest) => Promise<NextResponse<any>>) => {
+    return async (req: NextRequest): Promise<NextResponse<any>> => {
       const identifier = getIdentifier(req);
       const requestId = (req as any).requestId || 'unknown';
 
@@ -76,7 +76,7 @@ export function withRateLimit(
           );
 
           response.headers.set('Retry-After', result.retryAfter!.toString());
-          return withRateLimitHeaders(response, result.limit, result.remaining, result.reset) as NextResponse<T>;
+          return withRateLimitHeaders(response, result.limit, result.remaining, result.reset);
         }
 
         // Allow request

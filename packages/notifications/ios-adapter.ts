@@ -142,7 +142,7 @@ export class IOSNotificationAdapter implements NotificationAdapter {
             userId: payload.userId,
           },
           category: 'TASK_REMINDER', // Action category defined below
-          sound: 'default',
+          sound: payload.alarmEnabled ? 'default' : undefined,
           badge: 1,
         });
 

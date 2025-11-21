@@ -8,7 +8,7 @@
 'use client';
 
 import React, { forwardRef, ButtonHTMLAttributes, useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, HTMLMotionProps } from 'framer-motion';
 import { useTheme } from '../../theme';
 import { useIsMobile } from '../../hooks/useMediaQuery';
 import { springConfigs, getAccessibleTransition } from '../../utils/animations';
@@ -28,7 +28,7 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 /**
  * Button Props
  */
-export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
+export interface ButtonProps extends Omit<HTMLMotionProps<"button">, 'children'> {
   /**
    * Button variant - controls color and style
    * @default 'primary'

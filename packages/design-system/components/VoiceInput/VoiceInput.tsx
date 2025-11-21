@@ -306,7 +306,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
           marginTop: theme.spacing.sm,
           fontSize: theme.typography.sizes.sm.fontSize,
           color: isListening ? theme.colors.primary[500] : resolvedColors.text.secondary,
-          fontWeight: isListening ? theme.typography.weights.semibold : theme.typography.weights.normal,
+          fontWeight: isListening ? theme.typography.weights.semibold : theme.typography.weights.regular,
         }}
       >
         {isListening ? 'Listening...' : 'Tap to speak'}

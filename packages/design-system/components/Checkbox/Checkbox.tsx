@@ -19,7 +19,7 @@ export type CheckboxSize = 'sm' | 'md' | 'lg';
 /**
  * Checkbox Props
  */
-export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
+export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'onChange'> {
   /**
    * Whether checkbox is checked
    */
@@ -219,13 +219,12 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             ? theme.colors.error[500]
             : theme.colors.primary[500]
           : 'transparent',
-      border: `2px solid ${
-        error
+      border: `2px solid ${error
           ? theme.colors.error[500]
           : checked || indeterminate
-          ? theme.colors.primary[500]
-          : resolvedColors.border.default
-      }`,
+            ? theme.colors.primary[500]
+            : resolvedColors.border.default
+        }`,
       borderRadius: theme.radius.sm,
       transition: theme.transition.color.value,
     };

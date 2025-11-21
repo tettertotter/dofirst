@@ -8,7 +8,7 @@
 'use client';
 
 import React, { forwardRef, HTMLAttributes } from 'react';
-import { motion } from 'framer-motion';
+import { motion, HTMLMotionProps } from 'framer-motion';
 import { useTheme } from '../../theme';
 import { skeletonPulseVariants } from '../../utils/animations';
 
@@ -20,7 +20,7 @@ export type SkeletonVariant = 'text' | 'circular' | 'rectangular';
 /**
  * Skeleton Props
  */
-export interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
+export interface SkeletonProps extends HTMLMotionProps<'div'> {
   /**
    * Skeleton variant
    * @default 'text'
@@ -113,19 +113,18 @@ export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(
       ...(disableAnimation
         ? {}
         : {
-            '::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: `linear-gradient(90deg, transparent, ${
-                isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)'
+          '::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `linear-gradient(90deg, transparent, ${isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)'
               }, transparent)`,
-              animation: `skeletonWave 1.5s ease-in-out infinite`,
-            },
-          }),
+            animation: `skeletonWave 1.5s ease-in-out infinite`,
+          },
+        }),
     };
 
     // Keyframes for wave animation
@@ -147,9 +146,8 @@ export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(
       left: 0,
       right: 0,
       bottom: 0,
-      background: `linear-gradient(90deg, transparent, ${
-        isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)'
-      }, transparent)`,
+      background: `linear-gradient(90deg, transparent, ${isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)'
+        }, transparent)`,
       animation: disableAnimation
         ? undefined
         : `skeletonWave 1.5s ease-in-out infinite`,

@@ -129,7 +129,7 @@ function DefaultErrorFallback({
   error: Error;
   onReset: () => void;
 }) {
-  const theme = useTheme();
+  const { theme } = useTheme();
 
   const containerStyles: React.CSSProperties = {
     display: 'flex',
@@ -150,7 +150,7 @@ function DefaultErrorFallback({
     fontSize: 24,
     fontWeight: 700,
     marginBottom: theme.spacing.sm,
-    color: theme.colors.gray[900],
+    color: theme.colors.primary[500],
   };
 
   const messageStyles: React.CSSProperties = {
@@ -164,7 +164,7 @@ function DefaultErrorFallback({
   const buttonStyles: React.CSSProperties = {
     padding: `${theme.spacing.md} ${theme.spacing.xl}`,
     borderRadius: theme.radius.md,
-    background: theme.colors.blue[500],
+    background: theme.colors.primary[500],
     color: theme.colors.gray[0],
     border: 'none',
     fontSize: 16,
@@ -185,7 +185,7 @@ function DefaultErrorFallback({
   const codeStyles: React.CSSProperties = {
     fontSize: 12,
     fontFamily: 'monospace',
-    color: theme.colors.red[600],
+    color: theme.colors.error[500],
     textAlign: 'left',
   };
 
@@ -201,10 +201,10 @@ function DefaultErrorFallback({
         onClick={onReset}
         style={buttonStyles}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = theme.colors.blue[600];
+          e.currentTarget.style.background = theme.colors.primary[600];
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = theme.colors.blue[500];
+          e.currentTarget.style.background = theme.colors.primary[500];
         }}
       >
         Try Again

@@ -106,7 +106,7 @@ export function ProposalCard({
         borderRadius: theme.componentRadius.card.default,
         padding: spacing.md,
         marginBottom: spacing.sm,
-        transition: `all ${theme.transition.card.value}`,
+        transition: theme.transition.all.value,
         boxShadow: theme.shadows.light.sm,
       }}
     >
@@ -238,7 +238,7 @@ export function ProposalCard({
             marginTop: spacing.sm,
             padding: spacing.xs,
             borderRadius: theme.componentRadius.badge.default,
-            background: resolvedColors.surface.subtle,
+            background: resolvedColors.bg.tertiary,
             fontSize: theme.typography.sizes.sm.fontSize,
             color: resolvedColors.text.secondary
           }}
@@ -253,7 +253,7 @@ export function ProposalCard({
             marginTop: spacing.sm,
             padding: spacing.xs,
             borderRadius: theme.componentRadius.badge.default,
-            background: resolvedColors.surface.subtle,
+            background: resolvedColors.bg.tertiary,
             fontSize: theme.typography.sizes.sm.fontSize,
             color: resolvedColors.text.secondary
           }}

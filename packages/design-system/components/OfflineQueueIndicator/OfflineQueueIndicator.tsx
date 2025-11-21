@@ -69,7 +69,7 @@ export function OfflineQueueIndicator({
   autoHide = true,
   expandOnHover = true,
 }: OfflineQueueIndicatorProps) {
-  const theme = useTheme();
+  const { theme } = useTheme();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -108,7 +108,7 @@ export function OfflineQueueIndicator({
     color: theme.colors.gray[0],
     borderRadius: theme.radius.lg,
     padding: theme.spacing.md,
-    boxShadow: theme.shadows.lg,
+    boxShadow: theme.shadows.light.lg,
     maxWidth: 350,
     cursor: 'pointer',
   };
@@ -133,7 +133,7 @@ export function OfflineQueueIndicator({
   };
 
   const countBadgeStyles: React.CSSProperties = {
-    background: theme.colors.blue[500],
+    background: theme.colors.primary[500],
     borderRadius: theme.radius.full,
     padding: `2px ${theme.spacing.sm}`,
     fontSize: 12,
@@ -170,7 +170,7 @@ export function OfflineQueueIndicator({
 
   const retryButtonStyles: React.CSSProperties = {
     ...buttonStyles,
-    background: theme.colors.blue[500],
+    background: theme.colors.primary[500],
     color: theme.colors.gray[0],
     marginRight: theme.spacing.sm,
   };

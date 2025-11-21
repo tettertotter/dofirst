@@ -165,8 +165,8 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(
     // Filter options based on search
     const filteredOptions = searchable && searchQuery
       ? options.filter((opt) =>
-          opt.label.toLowerCase().includes(searchQuery.toLowerCase())
-        )
+        opt.label.toLowerCase().includes(searchQuery.toLowerCase())
+      )
       : options;
 
     // Size configurations
@@ -317,16 +317,15 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(
       padding: currentSize.padding,
       fontFamily: theme.typography.fonts.primary,
       fontSize: currentSize.fontSize,
-      backgroundColor: resolvedColors.surface.primary,
-      border: `1px solid ${
-        error ? theme.colors.error[500] : resolvedColors.border.default
-      }`,
+      backgroundColor: resolvedColors.surface.default,
+      border: `1px solid ${error ? theme.colors.error[500] : resolvedColors.border.default
+        }`,
       borderRadius: theme.radius.md,
       cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.6 : 1,
       outline: 'none',
-      transition: `all ${theme.duration.fast} ${theme.easing.easeOut}`,
-      boxShadow: isOpen ? theme.shadows.focus.default : 'none',
+      transition: `all ${theme.duration.fast} ${theme.easing.out}`,
+      boxShadow: isOpen ? theme.shadows.focus.default.boxShadow : 'none',
     };
 
     // Dropdown styles
@@ -337,7 +336,7 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(
       width: `${dropdownPosition.width}px`,
       maxHeight: '300px',
       overflowY: 'auto',
-      backgroundColor: resolvedColors.surface.primary,
+      backgroundColor: resolvedColors.surface.default,
       border: `1px solid ${resolvedColors.border.default}`,
       borderRadius: theme.radius.lg,  // 12px (was radius.md = 8px) ⭐ Match card styling
       boxShadow: isDark ? theme.shadows.dark.lg : theme.shadows.light.lg,  // Use dark shadow in dark mode ⭐
@@ -359,7 +358,7 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(
           : 'transparent',
       color: option.disabled ? resolvedColors.text.disabled : resolvedColors.text.primary,
       opacity: option.disabled ? 0.5 : 1,
-      transition: `background-color ${theme.duration.fast} ${theme.easing.easeOut}`,
+      transition: `background-color ${theme.duration.fast} ${theme.easing.out}`,
     });
 
     // Search input styles
@@ -368,7 +367,7 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(
       padding: currentSize.padding,
       border: 'none',
       borderBottom: `1px solid ${resolvedColors.border.default}`,
-      backgroundColor: resolvedColors.surface.primary,
+      backgroundColor: resolvedColors.surface.default,
       color: resolvedColors.text.primary,
       fontSize: currentSize.fontSize,
       outline: 'none',
@@ -459,7 +458,7 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(
             <div
               style={{
                 transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
-                transition: `transform ${theme.duration.fast} ${theme.easing.easeOut}`,
+                transition: `transform ${theme.duration.fast} ${theme.easing.out}`,
                 color: resolvedColors.text.secondary,
                 fontSize: currentSize.iconSize,
               }}

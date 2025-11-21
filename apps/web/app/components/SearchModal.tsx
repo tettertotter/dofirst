@@ -103,10 +103,10 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     return `Priority ${priority}`;
   };
 
-  const getPriorityColor = (priority: number | null): 'primary' | 'warning' | 'neutral' => {
+  const getPriorityColor = (priority: number | null): 'primary' | 'warning' | 'secondary' => {
     if (priority === 1) return 'primary';
     if (priority === 2) return 'warning';
-    return 'neutral';
+    return 'secondary';
   };
 
   const handleTaskClick = (task: Task) => {
@@ -184,7 +184,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   width: '100%'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = resolvedColors.surface.secondary;
+                  e.currentTarget.style.background = resolvedColors.bg.secondary;
                   e.currentTarget.style.borderColor = resolvedColors.border.default;
                 }}
                 onMouseLeave={(e) => {

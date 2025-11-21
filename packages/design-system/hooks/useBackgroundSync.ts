@@ -182,14 +182,14 @@ export function useBackgroundSync(
       saveActions(newActions);
 
       if (enableHaptics) {
-        haptics.light();
+        haptics.selection();
       }
 
       // Register for background sync if supported
       if (isSupported) {
         try {
           const registration = await navigator.serviceWorker.ready;
-          await registration.sync.register(syncTag);
+          await (registration as any).sync.register(syncTag);
         } catch (error) {
           console.error('Background sync registration failed:', error);
           // Fall back to immediate sync attempt

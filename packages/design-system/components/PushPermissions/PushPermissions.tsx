@@ -98,7 +98,7 @@ export function PushPermissions({
   showInstructions = true,
   autoSubscribe = true,
 }: PushPermissionsProps) {
-  const theme = useTheme();
+  const { theme } = useTheme();
   const [permissionState, setPermissionState] = useState<PermissionState>('default');
   const [isLoading, setIsLoading] = useState(false);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
@@ -138,7 +138,7 @@ export function PushPermissions({
             const registration = await navigator.serviceWorker.ready;
             const pushSubscription = await registration.pushManager.subscribe({
               userVisibleOnly: true,
-              applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+              applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as any,
             });
 
             setSubscription(pushSubscription);
@@ -179,7 +179,7 @@ export function PushPermissions({
       const registration = await navigator.serviceWorker.ready;
       const pushSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as any,
       });
 
       setSubscription(pushSubscription);
@@ -217,7 +217,7 @@ export function PushPermissions({
             <div style={{ marginTop: theme.spacing.md }}>
               <Button
                 onClick={subscribeToPush}
-                isLoading={isLoading}
+                loading={isLoading}
                 fullWidth
               >
                 Subscribe to Updates
@@ -338,7 +338,7 @@ export function PushPermissions({
 
         <Button
           onClick={requestPermission}
-          isLoading={isLoading}
+          loading={isLoading}
           size="lg"
           fullWidth
         >
@@ -362,7 +362,7 @@ export function PushPermissions({
   // Modal mode
   if (modal) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} size="sm">
+      <Modal open={isOpen} onClose={onClose || (() => { })} size="sm">
         <div style={{ padding: theme.spacing.lg }}>
           {renderContent()}
         </div>
@@ -379,7 +379,7 @@ export function PushPermissions({
         background: theme.colors.gray[0],
         borderRadius: theme.radius.lg,
         padding: theme.spacing.xl,
-        boxShadow: theme.shadows.md,
+        boxShadow: theme.shadows.light.md,
       }}
     >
       {renderContent()}

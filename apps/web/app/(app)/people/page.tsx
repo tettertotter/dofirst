@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { getSupabaseClient } from "../../../lib/supabase-client";
-import { 
-  Card, 
-  CardContent, 
-  Spinner, 
-  useTheme, 
-  spacing, 
-  Badge, 
+import {
+  Card,
+  CardContent,
+  Spinner,
+  useTheme,
+  spacing,
+  Badge,
   Skeleton,
   Button,
   Modal,
@@ -163,9 +163,8 @@ export default function PeoplePage() {
       }
     } catch (err) {
       console.error("Failed to fetch pools and members:", err);
-      toast.show({
-        title: "Error",
-        description: "Failed to fetch pool members",
+      toast.showToast({
+        message: "Error: Failed to fetch pool members",
         variant: "error"
       });
     } finally {
@@ -189,9 +188,8 @@ export default function PeoplePage() {
 
   const handleInviteMember = async () => {
     if (!inviteEmail || !selectedPoolId) {
-      toast.show({
-        title: "Validation Error",
-        description: "Please enter an email address",
+      toast.showToast({
+        message: "Validation Error: Please enter an email address",
         variant: "error"
       });
       return;
@@ -200,9 +198,8 @@ export default function PeoplePage() {
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(inviteEmail)) {
-      toast.show({
-        title: "Invalid Email",
-        description: "Please enter a valid email address",
+      toast.showToast({
+        message: "Invalid Email: Please enter a valid email address",
         variant: "error"
       });
       return;
@@ -229,9 +226,8 @@ export default function PeoplePage() {
         throw new Error(data.message || "Failed to invite member");
       }
 
-      toast.show({
-        title: "Success",
-        description: data.message || "Member invited successfully",
+      toast.showToast({
+        message: data.message || "Member invited successfully",
         variant: "success"
       });
 
@@ -243,9 +239,8 @@ export default function PeoplePage() {
       handleCloseInviteModal();
     } catch (err: any) {
       console.error("Invite error:", err);
-      toast.show({
-        title: "Error",
-        description: err.message || "Failed to invite member",
+      toast.showToast({
+        message: "Error: " + (err.message || "Failed to invite member"),
         variant: "error"
       });
     } finally {
@@ -255,9 +250,9 @@ export default function PeoplePage() {
 
   const getRoleBadgeColor = (role: string): string => {
     switch (role) {
-      case 'owner': return resolvedColors.status.success;
-      case 'spouse': return resolvedColors.primary;
-      case 'colleague': return resolvedColors.accent;
+      case 'owner': return resolvedColors.semantic.success;
+      case 'spouse': return resolvedColors.interactive.primary;
+      case 'colleague': return resolvedColors.interactive.secondary;
       case 'guest': return resolvedColors.text.tertiary;
       default: return resolvedColors.text.secondary;
     }
@@ -304,16 +299,14 @@ export default function PeoplePage() {
       });
 
       const limitText = newLimit === null ? "Unlimited" : newLimit === 0 ? "None" : `${newLimit}`;
-      toast.show({
-        title: "Success",
-        description: `Today limit updated to ${limitText}`,
+      toast.showToast({
+        message: `Success: Today limit updated to ${limitText}`,
         variant: "success"
       });
     } catch (err: any) {
       console.error("Update today limit error:", err);
-      toast.show({
-        title: "Error",
-        description: err.message || "Failed to update today limit",
+      toast.showToast({
+        message: "Error: " + (err.message || "Failed to update today limit"),
         variant: "error"
       });
     } finally {
@@ -445,13 +438,13 @@ export default function PeoplePage() {
                     }}>
                       {pool.name}
                     </h3>
-                    <Badge variant="neutral">
+                    <Badge variant="secondary">
                       {pool.members.length} member{pool.members.length !== 1 ? 's' : ''}
                     </Badge>
                   </div>
                   {isPoolOwner(pool.id) && (
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="secondary"
                       onClick={() => handleOpenInviteModal(pool.id)}
                     >
@@ -484,7 +477,7 @@ export default function PeoplePage() {
                           justifyContent: 'space-between',
                           alignItems: 'center',
                           padding: spacing.sm,
-                          backgroundColor: resolvedColors.surface.secondary,
+                          backgroundColor: resolvedColors.bg.secondary,
                           borderRadius: '8px',
                           gap: spacing.md
                         }}
@@ -556,11 +549,11 @@ export default function PeoplePage() {
 
       {/* Invite Member Modal */}
       <Modal
-        isOpen={inviteModalOpen}
+        open={inviteModalOpen}
         onClose={handleCloseInviteModal}
         size="sm"
       >
-        <ModalHeader onClose={handleCloseInviteModal}>
+        <ModalHeader>
           Invite Member
         </ModalHeader>
         <div style={{ padding: spacing.lg }}>

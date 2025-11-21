@@ -198,6 +198,7 @@ export class AndroidNotificationAdapter implements NotificationAdapter {
           priority: payload.priority || 3,
           poolId: payload.poolId,
           userId: payload.userId,
+          alarmEnabled: payload.alarmEnabled || false,
         };
 
         // Schedule alarm based on permission availability

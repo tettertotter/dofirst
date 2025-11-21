@@ -108,7 +108,7 @@ export function withRequestLogging<T>(
     try {
       const response = await handler(req);
       logResponse(req, response, requestId, startTime);
-      return withRequestId(response, requestId);
+      return withRequestId(response, requestId) as NextResponse<T>;
     } catch (error) {
       const errorResponse = NextResponse.json(
         { error: 'internal_error', message: 'An unexpected error occurred' },
@@ -127,7 +127,7 @@ export function withRequestLogging<T>(
       );
 
       logResponse(req, errorResponse, requestId, startTime);
-      return withRequestId(errorResponse, requestId);
+      return withRequestId(errorResponse, requestId) as NextResponse<T>;
     }
   };
 }

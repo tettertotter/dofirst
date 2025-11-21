@@ -183,13 +183,12 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       backgroundColor: disabled
         ? resolvedColors.surface.disabled
         : resolvedColors.surface.default,
-      border: `1px solid ${
-        error
+      border: `1px solid ${error
           ? theme.colors.error[500]
           : isFocused
-          ? theme.colors.primary[500]
-          : resolvedColors.border.default
-      }`,
+            ? theme.colors.primary[500]
+            : resolvedColors.border.default
+        }`,
       borderRadius: theme.componentRadius.input.textarea,  // 16px (not pill - tall rectangles) ⭐
       fontFamily: theme.typography.fonts.primary,
       fontSize: theme.typography.sizes.base.fontSize,
@@ -198,7 +197,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       resize: autoResize ? 'none' : 'vertical',
       outline: 'none',
       transition: theme.transition.color.value + ', ' + theme.transition.shadow.value,
-      boxShadow: isFocused && !error ? theme.shadows.focus.default : 'none',
+      boxShadow: isFocused && !error ? theme.shadows.focus.default.boxShadow : 'none',
       cursor: disabled ? 'not-allowed' : 'text',
     };
 

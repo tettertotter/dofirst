@@ -35,7 +35,7 @@ export function SideNav() {
               style={{
                 padding: `${spacing.sm} ${spacing.md}`,
                 borderRadius: radius.md,
-                background: active ? resolvedColors.surface.secondary : 'transparent',
+                background: active ? resolvedColors.bg.secondary : 'transparent',
                 fontWeight: active ? 600 : 500
               }}
             >

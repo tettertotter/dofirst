@@ -174,7 +174,7 @@ export function InstallPrompt({
   const handleInstall = async () => {
     if (!deferredPrompt) return;
 
-    haptics.light();
+    haptics.selection();
 
     try {
       // Show the install prompt
@@ -207,7 +207,7 @@ export function InstallPrompt({
   };
 
   const handleDismiss = () => {
-    haptics.light();
+    haptics.selection();
 
     // Store dismissal
     const state: PromptState = {
@@ -232,7 +232,7 @@ export function InstallPrompt({
     padding: theme.spacing.md,
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: theme.colors.gray[0],
-    boxShadow: theme.shadows.lg,
+    boxShadow: theme.shadows.light.lg,
   };
 
   const contentStyles: React.CSSProperties = {

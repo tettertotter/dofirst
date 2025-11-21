@@ -273,7 +273,7 @@ export default function TodayPage() {
               }}>
                 <Button
                   onClick={() => handleComplete(task.id)}
-                  variant="success"
+                  variant="primary"
                   size="md"
                   disabled={actionLoading === task.id}
                 >

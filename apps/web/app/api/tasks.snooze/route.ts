@@ -24,8 +24,9 @@ const SnoozeSchema = z.object({
   taskId: z.string().uuid(),
   // Exactly one of these must be provided:
   minutes: z.number().int().min(1).max(10080).optional(), // 1 min to 1 week
-  preset: z.enum(['tonight', 'tomorrow_am', 'tomorrow_pm', 'next_week']).optional(),
-  timestamp: z.string().datetime().optional() // ISO 8601
+  preset: z.enum(['tonight', 'tomorrow_am', 'tomorrow_pm', 'this_weekend', 'next_week']).optional(),
+  timestamp: z.string().datetime().optional(), // ISO 8601
+  alarm_enabled: z.boolean().optional() // Whether to play sound/alarm
 }).refine(
   data => {
     // Exactly one field must be set
@@ -53,7 +54,7 @@ async function handleSnooze(req: NextRequest) {
       );
     }
 
-    const { taskId, minutes, preset, timestamp } = parsed.data;
+    const { taskId, minutes, preset, timestamp, alarm_enabled } = parsed.data;
 
     // Get authenticated user
     const supabase = await createServerClient();
@@ -133,8 +134,15 @@ async function handleSnooze(req: NextRequest) {
           newDue.setHours(14, 0, 0, 0);
           break;
 
+        case 'this_weekend':
+          // This Saturday at 9am
+          const daysUntilSaturday = (6 - newDue.getDay() + 7) % 7 || 7;
+          newDue.setDate(newDue.getDate() + daysUntilSaturday);
+          newDue.setHours(9, 0, 0, 0);
+          break;
+
         case 'next_week':
-          // Same time next Monday
+          // Next Monday at 9am
           const daysUntilMonday = (8 - newDue.getDay()) % 7 || 7;
           newDue.setDate(newDue.getDate() + daysUntilMonday);
           newDue.setHours(9, 0, 0, 0);
@@ -168,11 +176,12 @@ async function handleSnooze(req: NextRequest) {
       poolId: task.pool_id
     });
 
-    // Update task due_at
+    // Update task due_at and alarm_enabled
     const { error: updateError } = await supabase
       .from('tasks')
       .update({
         due_at: newDue.toISOString(),
+        alarm_enabled: alarm_enabled ?? false,
         updated_at: now.toISOString()
       })
       .eq('id', taskId);
@@ -225,7 +234,8 @@ async function handleSnooze(req: NextRequest) {
             dueAt: newDue.toISOString(),
             priority: task.priority ?? 3,
             poolId: task.pool_id,
-            userId: user.id
+            userId: user.id,
+            alarmEnabled: alarm_enabled ?? false
           };
 
           await notifications.schedule(taskId, nagTimes, notificationPayload);
@@ -237,7 +247,7 @@ async function handleSnooze(req: NextRequest) {
           });
 
           taskLogger.info('Rescheduled notifications', {
-            scheduledTimes: nagTimes.map(t => t.toISOString())
+            scheduledTimes: nagTimes.map(t => t.toISOString()).join(',')
           });
         }
       } catch (notifError) {

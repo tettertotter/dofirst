@@ -39,7 +39,7 @@ export async function registerWebPush(): Promise<PushSubscription | null> {
     // Subscribe to push notifications
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as any,
     });
 
     console.log('[WebPush] Push subscription created');

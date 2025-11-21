@@ -145,6 +145,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const { theme, isDark, resolvedColors } = useTheme();
     const [isFocused, setIsFocused] = useState(false);
     const [internalValue, setInternalValue] = useState(value || '');
+    const [isClearHovered, setIsClearHovered] = useState(false);
 
     // Generate unique IDs for accessibility
     const inputId = id || `input-${React.useId()}`;
@@ -226,16 +227,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       backgroundColor: disabled
         ? resolvedColors.surface.disabled
         : resolvedColors.surface.default,
-      border: `1px solid ${
-        error
-          ? theme.colors.error[500]
-          : isFocused
+      border: `1px solid ${error
+        ? theme.colors.error[500]
+        : isFocused
           ? theme.colors.primary[500]
           : resolvedColors.border.default
-      }`,
+        }`,
       borderRadius: theme.componentRadius.input.default,
       transition: theme.transition.color.value + ', ' + theme.transition.shadow.value,
-      boxShadow: isFocused && !error ? theme.shadows.focus.default : 'none',
+      boxShadow: isFocused && !error ? theme.shadows.focus.default.boxShadow : 'none',
       cursor: disabled ? 'not-allowed' : 'text',
     };
 
@@ -261,8 +261,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       color: error
         ? theme.colors.error[500]
         : disabled
-        ? resolvedColors.text.disabled
-        : resolvedColors.text.tertiary,
+          ? resolvedColors.text.disabled
+          : resolvedColors.text.tertiary,
       flexShrink: 0,
     };
 
@@ -282,24 +282,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       justifyContent: 'center',
       padding: theme.spacing[1],
       border: 'none',
-      backgroundColor: 'transparent',
-      color: resolvedColors.text.tertiary,
+      backgroundColor: isClearHovered ? resolvedColors.surface.hover : 'transparent',
+      color: isClearHovered ? resolvedColors.text.primary : resolvedColors.text.tertiary,
       cursor: 'pointer',
       borderRadius: theme.radius.sm,
       transition: theme.transition.color.value,
       flexShrink: 0,
-      ':hover': {
-        color: resolvedColors.text.primary,
-        backgroundColor: resolvedColors.surface.hover,
-      },
     };
 
     // Determine aria-describedby value
     const describedBy = error && errorMessage
       ? errorTextId
       : helperText
-      ? helperTextId
-      : undefined;
+        ? helperTextId
+        : undefined;
 
     return (
       <div style={containerStyles} className={containerClassName}>
@@ -338,6 +334,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               type="button"
               onClick={handleClear}
               style={clearButtonStyles}
+              onMouseEnter={() => setIsClearHovered(true)}
+              onMouseLeave={() => setIsClearHovered(false)}
               aria-label="Clear input"
             >
               <ClearIcon size={currentSize.iconSize} />

@@ -58,7 +58,7 @@ async function handleComplete(req: NextRequest) {
     // Get the task
     const { data: task, error: taskError } = await supabase
       .from('tasks')
-      .select('id, pool_id, title, description, priority, visibility, status, due_at, recurrence, snooze_cadence, created_by')
+      .select('id, pool_id, title, description, priority, visibility, status, due_at, recurrence, snooze_cadence, alarm_enabled, created_by')
       .eq('id', taskId)
       .single();
 
@@ -120,7 +120,8 @@ async function handleComplete(req: NextRequest) {
               status: 'open',
               due_at: nextInstance.dueAt.toISOString(),
               recurrence: task.recurrence,
-              snooze_cadence: task.snooze_cadence
+              snooze_cadence: task.snooze_cadence,
+              alarm_enabled: task.alarm_enabled ?? false
             })
             .select('id')
             .single();
@@ -165,7 +166,8 @@ async function handleComplete(req: NextRequest) {
                       dueAt: nextInstance.dueAt.toISOString(),
                       priority: task.priority ?? 3,
                       poolId: task.pool_id,
-                      userId: user.id
+                      userId: user.id,
+                      alarmEnabled: task.alarm_enabled ?? false
                     });
 
                     await supabase.rpc('update_nagging_state_after_notification', {

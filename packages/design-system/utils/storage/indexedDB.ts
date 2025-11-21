@@ -168,7 +168,7 @@ export class IndexedDBStorage {
       const transaction = db.transaction([store], 'readonly');
       const objectStore = transaction.objectStore(store);
       const index = objectStore.index('synced');
-      const request = index.getAll(false);
+      const request = index.getAll(false as any);
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result);

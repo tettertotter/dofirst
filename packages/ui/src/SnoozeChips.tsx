@@ -63,6 +63,20 @@ const DEFAULT_OPTIONS: SnoozeOption[] = [
     icon: "☀️",
     description: "9am tomorrow",
     value: "tomorrow_am"
+  },
+  {
+    id: "weekend",
+    label: "This Weekend",
+    icon: "🏖️",
+    description: "Saturday 9am",
+    value: "this_weekend"
+  },
+  {
+    id: "next_week",
+    label: "Next Week",
+    icon: "📆",
+    description: "Monday 9am",
+    value: "next_week"
   }
 ];
 

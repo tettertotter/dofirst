@@ -3,5 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "main": "./index.ts",
-  "types": "./index.ts"
+  "types": "./index.ts",
+  "devDependencies": {
+    "next": "^15.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@types/node": "^20.0.0",
+    "@todaypool/logging": "workspace:*"
+  },
+  "peerDependencies": {
+    "next": ">=13.0.0",
+    "react": ">=18.0.0"
+  }
 }

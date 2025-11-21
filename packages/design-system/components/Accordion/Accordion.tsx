@@ -43,7 +43,7 @@ export interface AccordionItem {
 /**
  * Accordion Props
  */
-export interface AccordionProps extends HTMLAttributes<HTMLDivElement> {
+export interface AccordionProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> {
   /**
    * Accordion items
    */
@@ -222,12 +222,12 @@ const AccordionItemComponent: React.FC<AccordionItemComponentProps> = ({
     padding: theme.spacing.lg,
     backgroundColor: isExpanded
       ? resolvedColors.surface.hover
-      : resolvedColors.surface.primary,
+      : resolvedColors.surface.default,
     border: 'none',
     cursor: item.disabled ? 'not-allowed' : 'pointer',
     opacity: item.disabled ? 0.5 : 1,
     outline: 'none',
-    transition: `all ${theme.duration.fast} ${theme.easing.easeOut}`,
+    transition: `all ${theme.duration.fast} ${theme.easing.out}`,
     fontFamily: theme.typography.fonts.primary,
     fontSize: theme.typography.sizes.base.fontSize,
     fontWeight: theme.typography.weights.semibold,
@@ -247,7 +247,7 @@ const AccordionItemComponent: React.FC<AccordionItemComponentProps> = ({
   // Chevron styles
   const chevronStyles: React.CSSProperties = {
     transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)',
-    transition: `transform ${theme.duration.fast} ${theme.easing.easeOut}`,
+    transition: `transform ${theme.duration.fast} ${theme.easing.out}`,
     color: resolvedColors.text.secondary,
     fontSize: '12px',
     flexShrink: 0,
@@ -257,7 +257,7 @@ const AccordionItemComponent: React.FC<AccordionItemComponentProps> = ({
   const contentWrapperStyles: React.CSSProperties = {
     height: isExpanded ? `${contentHeight}px` : '0',
     overflow: 'hidden',
-    transition: `height ${theme.duration.normal} ${theme.easing.easeOut}`,
+    transition: `height ${theme.duration.normal} ${theme.easing.out}`,
   };
 
   // Content styles

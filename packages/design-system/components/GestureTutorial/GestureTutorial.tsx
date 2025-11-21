@@ -63,7 +63,7 @@ export function GestureTutorial({
   enableHaptics = true,
   showSkip = true,
 }: GestureTutorialProps) {
-  const theme = useTheme();
+  const { theme } = useTheme();
   const [currentStep, setCurrentStep] = useState(0);
   const [hasInteracted, setHasInteracted] = useState(false);
 
@@ -275,7 +275,7 @@ export function GestureTutorial({
                 borderRadius: theme.radius.full,
                 background:
                   index <= currentStep
-                    ? theme.colors.blue[500]
+                    ? theme.colors.primary[500]
                     : theme.colors.gray[200],
                 transition: 'background 0.3s ease',
               }}

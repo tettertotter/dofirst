@@ -243,10 +243,10 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(
         border: `1px solid ${resolvedColors.border.default}`,
         borderRadius: theme.radius.md,
         padding: '4px',
-        backgroundColor: resolvedColors.surface.secondary,
+        backgroundColor: resolvedColors.bg.secondary,
       }),
       ...(variant === 'pill' && {
-        backgroundColor: resolvedColors.surface.secondary,
+        backgroundColor: resolvedColors.bg.secondary,
         borderRadius: theme.radius.full,
         padding: '4px',
       }),
@@ -277,16 +277,16 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(
         color: item.disabled
           ? resolvedColors.text.disabled
           : isActive
-          ? variant === 'line'
-            ? theme.colors.primary[500]
-            : resolvedColors.text.primary
-          : resolvedColors.text.secondary,
+            ? variant === 'line'
+              ? theme.colors.primary[500]
+              : resolvedColors.text.primary
+            : resolvedColors.text.secondary,
         backgroundColor: 'transparent',
         border: 'none',
         cursor: item.disabled ? 'not-allowed' : 'pointer',
         opacity: item.disabled ? 0.5 : 1,
         outline: 'none',
-        transition: `all ${theme.duration.fast} ${theme.easing.easeOut}`,
+        transition: `all ${theme.duration.fast} ${theme.easing.out}`,
         position: 'relative',
         zIndex: 1,
         whiteSpace: 'nowrap',
@@ -324,7 +324,7 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(
           ...indicatorStyle,
           top: '4px',
           bottom: '4px',
-          backgroundColor: resolvedColors.surface.primary,
+          backgroundColor: resolvedColors.surface.default,
           borderRadius: variant === 'pill' ? theme.radius.full : theme.radius.md,
           boxShadow: theme.shadows.light.sm,
         };

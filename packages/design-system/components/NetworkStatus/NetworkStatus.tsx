@@ -131,7 +131,7 @@ export const NetworkStatus: React.FC<NetworkStatusProps> = ({
   // Banner styles
   const bannerStyles: React.CSSProperties = {
     padding: `${theme.spacing.sm} ${theme.spacing.md}`,
-    backgroundColor: isOnline ? theme.colors.green[500] : theme.colors.red[500],
+    backgroundColor: isOnline ? theme.colors.accent[500] : theme.colors.error[500],
     color: theme.colors.gray[0],
     textAlign: 'center',
     fontSize: theme.typography.sizes.sm.fontSize,

@@ -301,6 +301,8 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
       margin: 0,
     };
 
+    const [isCloseHovered, setIsCloseHovered] = useState(false);
+
     // Close button styles - 2025 Professional Standards
     const closeButtonStyles: React.CSSProperties = {
       display: 'flex',
@@ -311,14 +313,10 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
       padding: 0,
       border: 'none',
       borderRadius: theme.radius.md,  // 8px for small interactive element ⭐
-      backgroundColor: 'transparent',
-      color: resolvedColors.text.secondary,
+      backgroundColor: isCloseHovered ? resolvedColors.surface.hover : 'transparent',
+      color: isCloseHovered ? resolvedColors.text.primary : resolvedColors.text.secondary,
       cursor: 'pointer',
       transition: theme.transition.color.value,
-      ':hover': {
-        backgroundColor: resolvedColors.surface.hover,
-        color: resolvedColors.text.primary,
-      },
     };
 
     // Content styles - 2025 Professional Standards
@@ -395,6 +393,8 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
                     onClick={onClose}
                     style={closeButtonStyles}
                     aria-label="Close modal"
+                    onMouseEnter={() => setIsCloseHovered(true)}
+                    onMouseLeave={() => setIsCloseHovered(false)}
                   >
                     <CloseIcon size={20} />
                   </button>

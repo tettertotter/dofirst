@@ -123,7 +123,7 @@ export function useOptimistic<T>(
 
     // Haptic feedback for immediate action
     if (enableHaptics) {
-      haptics.light();
+      haptics.selection();
     }
 
     try {

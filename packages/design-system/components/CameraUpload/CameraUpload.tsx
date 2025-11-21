@@ -116,7 +116,7 @@ export function CameraUpload({
   enableHaptics = true,
   facingMode = 'environment',
 }: CameraUploadProps) {
-  const theme = useTheme();
+  const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -311,9 +311,9 @@ export function CameraUpload({
       {/* Trigger Button */}
       <Button
         onClick={() => setIsOpen(true)}
-        variant="outline"
+        variant="secondary"
         disabled={isUploading}
-        isLoading={isUploading}
+        loading={isUploading}
       >
         📸 {buttonText}
       </Button>
@@ -434,7 +434,7 @@ export function CameraUpload({
                     <Button onClick={capturePhoto} fullWidth size="lg">
                       📸 Capture
                     </Button>
-                    <Button onClick={stopCamera} variant="outline" size="lg">
+                    <Button onClick={stopCamera} variant="secondary" size="lg">
                       Cancel
                     </Button>
                   </div>
@@ -471,7 +471,7 @@ export function CameraUpload({
                       />
                       <Button
                         onClick={() => fileInputRef.current?.click()}
-                        variant="outline"
+                        variant="secondary"
                         size="lg"
                         fullWidth
                       >

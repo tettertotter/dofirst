@@ -19,7 +19,7 @@ import {
   DatePicker,
   type SelectOption
 } from "@todaypool/design-system";
-import { SnoozeChips, SnoozeModal, useSnooze } from "@todaypool/ui";
+import { SnoozeChips, SnoozeModal } from "@todaypool/ui";
 import {
   DndContext,
   DragOverlay,
@@ -121,6 +121,7 @@ export default function PoolPage() {
 
   const filterOptions: SelectOption[] = [
     { value: "all", label: "All Priorities" },
+    { value: "unsorted", label: "Unsorted" },
     { value: "5", label: "Urgent (5)" },
     { value: "4", label: "High (4)" },
     { value: "3", label: "Medium (3)" },
@@ -150,9 +151,10 @@ export default function PoolPage() {
       task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // Priority filter
+    // Priority filter - handle null priority (unsorted)
     const matchesPriority = priorityFilter === "all" ||
-      task.priority === Number(priorityFilter);
+      (priorityFilter === "unsorted" && task.priority === null) ||
+      (priorityFilter !== "unsorted" && task.priority === Number(priorityFilter));
 
     // Status filter
     const matchesStatus = statusFilter === "all" ||
@@ -162,16 +164,54 @@ export default function PoolPage() {
   });
 
   // Snooze modal state
-  const { modalTask, openSnoozeModal, closeSnoozeModal, handleSnooze } = useSnooze({
-    onSuccess: async () => {
-      setMessage("✓ Task snoozed successfully");
+  const [snoozeModalOpen, setSnoozeModalOpen] = useState(false);
+  const [snoozeTask, setSnoozeTask] = useState<Task | null>(null);
+
+  const openSnoozeModal = (task: Task) => {
+    setSnoozeTask(task);
+    setSnoozeModalOpen(true);
+  };
+
+  const closeSnoozeModal = () => {
+    setSnoozeTask(null);
+    setSnoozeModalOpen(false);
+  };
+
+  const handleSnooze = async (taskId: string, options: { minutes?: number; preset?: string; timestamp?: string; alarm_enabled?: boolean }) => {
+    try {
+      const body: any = { taskId };
+      if (options.minutes !== undefined) {
+        body.minutes = options.minutes;
+      } else if (options.preset) {
+        body.preset = options.preset;
+      } else if (options.timestamp) {
+        body.timestamp = options.timestamp;
+      }
+
+      // Include alarm_enabled if specified
+      if (options.alarm_enabled !== undefined) {
+        body.alarm_enabled = options.alarm_enabled;
+      }
+
+      const res = await fetch("/api/tasks.snooze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to snooze task");
+      }
+
+      setMessage(options.alarm_enabled ? "✓ Task snoozed with alarm" : "✓ Task snoozed successfully");
       await fetchTasks();
+      closeSnoozeModal();
       setTimeout(() => setMessage(undefined), 3000);
-    },
-    onError: (error) => {
-      setMessage(`Error: ${error}`);
-    },
-  });
+    } catch (error) {
+      setMessage(`Error: ${error instanceof Error ? error.message : "Failed to snooze task"}`);
+    }
+  };
 
   useEffect(() => {
     const supabase = getSupabaseClient();
@@ -699,7 +739,8 @@ export default function PoolPage() {
   };
 
   const handleSwipeEnd = () => {
-    if (Math.abs(swipeOffset) > 100 && swipeTaskId) {
+    const SWIPE_THRESHOLD = 200; // Increased from 100px - need to swipe ~50% of card width
+    if (Math.abs(swipeOffset) > SWIPE_THRESHOLD && swipeTaskId) {
       // Swipe threshold reached - trigger action based on direction
       if (swipeOffset > 0) {
         // Swipe right - mark as complete
@@ -776,12 +817,12 @@ export default function PoolPage() {
                 left: 0,
                 top: 0,
                 bottom: 0,
-                width: '100px',
+                width: '120px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: '#22c55e',
-                opacity: Math.min(currentSwipeOffset / 100, 1),
+                opacity: Math.min(currentSwipeOffset / 200, 1),
                 borderRadius: '12px 0 0 12px',
                 zIndex: 0,
               }}>
@@ -796,12 +837,12 @@ export default function PoolPage() {
                 right: 0,
                 top: 0,
                 bottom: 0,
-                width: '100px',
+                width: '120px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: '#f59e0b',
-                opacity: Math.min(Math.abs(currentSwipeOffset) / 100, 1),
+                opacity: Math.min(Math.abs(currentSwipeOffset) / 200, 1),
                 borderRadius: '0 12px 12px 0',
                 zIndex: 0,
               }}>
@@ -835,143 +876,121 @@ export default function PoolPage() {
           }}
           style={{ zIndex: 1, position: 'relative' }}
         >
-          <div style={{ padding: spacing.md, display: 'flex' }}>
-            {/* Drag handle - ONLY draggable element */}
+          <div style={{ padding: '6px 8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {/* Drag handle - compact */}
             <div
               {...attributes}
               {...listeners}
               data-drag-handle="true"
-              style={dragHandleStyle}
+              style={{
+                cursor: 'grab',
+                touchAction: 'none',
+                padding: '2px 4px',
+                display: 'flex',
+                alignItems: 'center',
+                color: resolvedColors.text.tertiary,
+                fontSize: '14px',
+                userSelect: 'none',
+              }}
               onMouseDown={stopSwipePropagation}
               onTouchStart={stopSwipePropagation}
             >
               ⋮⋮
             </div>
 
-            {/* Task content */}
-            <div style={{ flex: 1 }}>
-              {/* Header: Title + Priority + Due */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: spacing.sm
+            {/* Task content - single row layout */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {/* Title - truncate if too long */}
+              <h3 style={{
+                fontSize: '13px',
+                fontWeight: 500,
+                color: resolvedColors.text.primary,
+                margin: 0,
+                flex: 1,
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
               }}>
-                <h3 style={{
-                  fontSize: '16px',
-                  fontWeight: 600,
-                  color: resolvedColors.text.primary,
-                  margin: 0,
-                  flex: 1
-                }}>
-                  {task.title}
-                </h3>
-                <div style={{ display: 'flex', gap: spacing.xs, alignItems: 'center' }}>
-                  <Badge
-                    color={getPriorityColor(task.priority)}
-                    size="sm"
-                  >
-                    {task.priority !== null ? getPriorityLabel(task.priority) : 'Unsorted'}
+                {task.title}
+              </h3>
+
+              {/* Badges - compact */}
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
+                {dueInfo && (
+                  <Badge color={dueInfo.color} size="sm" style={{ fontSize: '10px', padding: '1px 6px' }}>
+                    {dueInfo.text}
                   </Badge>
-                  {dueInfo && (
-                    <Badge color={dueInfo.color} size="sm">
-                      {dueInfo.text}
-                    </Badge>
-                  )}
-                </div>
+                )}
+                <Badge
+                  color={getPriorityColor(task.priority)}
+                  size="sm"
+                  style={{ fontSize: '10px', padding: '1px 6px' }}
+                >
+                  {task.priority !== null ? getPriorityLabel(task.priority) : 'Unsorted'}
+                </Badge>
               </div>
 
-              {/* Description */}
-              {task.description && (
-                <p style={{
-                  fontSize: '14px',
-                  color: resolvedColors.text.secondary,
-                  margin: 0,
-                  marginBottom: spacing.sm
-                }}>
-                  {task.description}
-                </p>
-              )}
-
-              {/* Actions */}
+              {/* Actions - icon buttons only */}
               <div
                 style={{
                   display: 'flex',
-                  gap: spacing.sm,
-                  marginTop: spacing.md,
-                  flexWrap: 'wrap'
+                  gap: '4px',
+                  alignItems: 'center',
+                  flexShrink: 0
                 }}
                 onMouseDown={stopSwipePropagation}
                 onTouchStart={stopSwipePropagation}
               >
-                <Button
+                <button
+                  onClick={() => openSnoozeModal(task)}
+                  disabled={isLoading}
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '12px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    background: 'white',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    opacity: isLoading ? 0.5 : 1,
+                  }}
+                  title="Snooze"
+                >
+                  💤
+                </button>
+                <button
+                  onClick={() => handleComplete(task.id)}
+                  disabled={isLoading}
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '12px',
+                    border: '1px solid #22c55e',
+                    borderRadius: '4px',
+                    background: '#22c55e',
+                    color: 'white',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    opacity: isLoading ? 0.5 : 1,
+                  }}
+                  title="Complete"
+                >
+                  ✓
+                </button>
+                <button
                   onClick={() => handleOpenEditModal(task)}
-                  variant="secondary"
-                  size="sm"
                   disabled={isLoading}
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '12px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    background: 'white',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    opacity: isLoading ? 0.5 : 1,
+                  }}
+                  title="Edit/More options"
                 >
-                  Edit
-                </Button>
-                <Button
-                  onClick={() => handleOpenDeleteModal(task)}
-                  variant="danger"
-                  size="sm"
-                  disabled={isLoading}
-                >
-                  Delete
-                </Button>
-                <SnoozeChips
-                  taskId={task.id}
-                  onQuickSnooze={(id, minutes) => handleQuickSnooze(id, minutes)}
-                  onMoreOptions={(id) => openSnoozeModal(task)}
-                  disabled={isLoading}
-                />
-                <Button
-                  onClick={() => handleProposeForToday(task)}
-                  variant="primary"
-                  size="sm"
-                  disabled={isLoading || proposing}
-                >
-                  {(isLoading || proposing) ? <Spinner size="sm" /> : "📅 Today"}
-                </Button>
-                <Button
-                  onClick={() => handleOpenProposeDateModal(task)}
-                  variant="secondary"
-                  size="sm"
-                  disabled={isLoading || proposing}
-                >
-                  {(isLoading || proposing) ? <Spinner size="sm" /> : "📆 Date"}
-                </Button>
-                {task.status === 'open' && (
-                  <Button
-                    onClick={() => handleStatusTransition(task.id, 'in_progress', '✓ Marked as In Progress')}
-                    variant="primary"
-                    size="sm"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <Spinner size="sm" /> : "→ In Progress"}
-                  </Button>
-                )}
-                {task.status !== 'done' && task.status !== 'archived' && (
-                  <Button
-                    onClick={() => handleComplete(task.id)}
-                    variant="success"
-                    size="sm"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <Spinner size="sm" /> : "✓ Done"}
-                  </Button>
-                )}
-                {task.status === 'done' && (
-                  <Button
-                    onClick={() => handleStatusTransition(task.id, 'archived', '✓ Archived')}
-                    variant="secondary"
-                    size="sm"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <Spinner size="sm" /> : "📦 Archive"}
-                  </Button>
-                )}
+                  ⋯
+                </button>
               </div>
             </div>
           </div>
@@ -1152,36 +1171,38 @@ export default function PoolPage() {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {groupedTasks.map(({ priority, label, tasks: priorityTasks }) => (
               <div key={`priority-${priority}`}>
-                {/* Priority Section Header */}
+                {/* Priority Section Header - compact */}
                 <div
                   id={`priority-${priority}`}
                   style={{
-                    padding: spacing.md,
-                    marginBottom: spacing.sm,
-                    borderLeft: `4px solid ${getPriorityColor(priority)}`,
-                    backgroundColor: resolvedColors.surface.secondary,
-                    borderRadius: '8px',
+                    padding: '6px 10px',
+                    marginBottom: '4px',
+                    borderLeft: `3px solid ${getPriorityColor(priority)}`,
+                    backgroundColor: resolvedColors.bg.secondary,
+                    borderRadius: '4px',
                   }}
                 >
                   <h2 style={{
-                    fontSize: '18px',
+                    fontSize: '12px',
                     fontWeight: 600,
                     color: resolvedColors.text.primary,
                     margin: 0,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
                   }}>
                     {label} ({priorityTasks.length})
                   </h2>
                 </div>
 
-                {/* Sortable task list */}
+                {/* Sortable task list - compact spacing */}
                 <SortableContext
                   items={priorityTasks.map(t => t.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     {priorityTasks.map((task) => (
                       <SortableTaskCard key={task.id} task={task} />
                     ))}
@@ -1190,16 +1211,111 @@ export default function PoolPage() {
               </div>
             ))}
           </div>
+
+          {/* Drag Overlay - shows the dragged task */}
+          <DragOverlay>
+            {activeId ? (
+              (() => {
+                const activeTask = tasks.find(t => t.id === activeId);
+                if (!activeTask) return null;
+
+                const dueInfo = formatDueDate(activeTask.due_at);
+
+                return (
+                  <Card style={{
+                    opacity: 0.9,
+                    cursor: 'grabbing',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                    transform: 'rotate(-2deg)'
+                  }}>
+                    <div style={{ padding: '6px 8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div style={{
+                        padding: '2px 4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: resolvedColors.text.tertiary,
+                        fontSize: '14px',
+                      }}>
+                        ⋮⋮
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <h3 style={{
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          color: resolvedColors.text.primary,
+                          margin: 0,
+                          flex: 1,
+                          minWidth: 0,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {activeTask.title}
+                        </h3>
+
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
+                          {dueInfo && (
+                            <Badge color={dueInfo.color} size="sm" style={{ fontSize: '10px', padding: '1px 6px' }}>
+                              {dueInfo.text}
+                            </Badge>
+                          )}
+                          <Badge
+                            color={getPriorityColor(activeTask.priority)}
+                            size="sm"
+                            style={{ fontSize: '10px', padding: '1px 6px' }}
+                          >
+                            {activeTask.priority !== null ? getPriorityLabel(activeTask.priority) : 'Unsorted'}
+                          </Badge>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
+                          <button style={{
+                            padding: '4px 8px',
+                            fontSize: '12px',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            background: 'white',
+                          }}>
+                            💤
+                          </button>
+                          <button style={{
+                            padding: '4px 8px',
+                            fontSize: '12px',
+                            border: '1px solid #22c55e',
+                            borderRadius: '4px',
+                            background: '#22c55e',
+                            color: 'white',
+                          }}>
+                            ✓
+                          </button>
+                          <button style={{
+                            padding: '4px 8px',
+                            fontSize: '12px',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            background: 'white',
+                          }}>
+                            ⋯
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })()
+            ) : null}
+          </DragOverlay>
         </DndContext>
       )}
 
       {/* Edit Modal */}
       <Modal
-        isOpen={editModalOpen}
+        open={editModalOpen}
         onClose={handleCloseEditModal}
         size="md"
       >
-        <ModalHeader onClose={handleCloseEditModal}>
+        <ModalHeader>
           Edit Task
         </ModalHeader>
         <div style={{ padding: spacing.lg }}>
@@ -1305,7 +1421,7 @@ export default function PoolPage() {
                 fontSize: '14px',
                 borderRadius: '8px',
                 border: `1px solid ${resolvedColors.border.default}`,
-                backgroundColor: resolvedColors.surface.primary,
+                backgroundColor: resolvedColors.surface.default,
                 color: resolvedColors.text.primary
               }}
             />
@@ -1339,11 +1455,11 @@ export default function PoolPage() {
 
       {/* Delete Confirmation Modal */}
       <Modal
-        isOpen={deleteModalOpen}
+        open={deleteModalOpen}
         onClose={handleCloseDeleteModal}
         size="sm"
       >
-        <ModalHeader onClose={handleCloseDeleteModal}>
+        <ModalHeader>
           Delete Task
         </ModalHeader>
         <div style={{ padding: spacing.lg }}>
@@ -1390,10 +1506,10 @@ export default function PoolPage() {
 
       {/* Snooze Modal */}
       <SnoozeModal
-        task={modalTask}
-        open={!!modalTask}
+        task={snoozeTask}
+        open={snoozeModalOpen}
         onClose={closeSnoozeModal}
-        onSnooze={handleSnooze}
+        onSnooze={(options) => snoozeTask && handleSnooze(snoozeTask.id, options)}
       />
 
       {/* Propose Date Picker Modal */}

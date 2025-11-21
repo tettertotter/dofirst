@@ -158,7 +158,7 @@ export function useShare(options?: {
 
         // Haptic feedback before sharing
         if (enableHaptics) {
-          haptics.light();
+          haptics.selection();
         }
 
         // Trigger native share dialog

@@ -68,7 +68,7 @@ export async function createServerClient() {
  * Returns null if not authenticated.
  */
 export async function getAuthUser(
-  client: ReturnType<typeof createServerClient>,
+  client: Awaited<ReturnType<typeof createServerClient>>,
   authHeader?: string | null
 ) {
   // Try Authorization header first (for mobile)

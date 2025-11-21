@@ -90,7 +90,7 @@ export function RatingPrompt({
   enableHaptics = true,
   position = 'bottom',
 }: RatingPromptProps) {
-  const theme = useTheme();
+  const { theme } = useTheme();
   const [step, setStep] = useState<'initial' | 'rating' | 'feedback' | 'thanks'>('initial');
   const [selectedRating, setSelectedRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -154,7 +154,7 @@ export function RatingPrompt({
    * Handle dismiss
    */
   const handleDismiss = useCallback(() => {
-    if (enableHaptics) haptics.light();
+    if (enableHaptics) haptics.selection();
     if (onDismiss) onDismiss();
   }, [enableHaptics, onDismiss]);
 
@@ -343,23 +343,23 @@ export function RatingPrompt({
   const containerStyle: React.CSSProperties =
     position === 'center'
       ? {
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: theme.zIndex.modal + 1,
-          width: '90%',
-          maxWidth: 400,
-        }
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: theme.zIndex.modal + 1,
+        width: '90%',
+        maxWidth: 400,
+      }
       : {
-          position: 'fixed',
-          bottom: 20,
-          left: 20,
-          right: 20,
-          zIndex: theme.zIndex.modal + 1,
-          maxWidth: 400,
-          margin: '0 auto',
-        };
+        position: 'fixed',
+        bottom: 20,
+        left: 20,
+        right: 20,
+        zIndex: theme.zIndex.modal + 1,
+        maxWidth: 400,
+        margin: '0 auto',
+      };
 
   return (
     <AnimatePresence>
@@ -388,7 +388,7 @@ export function RatingPrompt({
             background: theme.colors.gray[0],
             borderRadius: theme.radius.xl,
             padding: theme.spacing.xl,
-            boxShadow: theme.shadows.xl,
+            boxShadow: theme.shadows.light.xl,
           }}
         >
           {renderContent()}

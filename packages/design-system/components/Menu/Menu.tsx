@@ -261,7 +261,7 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(
       minWidth: '200px',
       maxHeight: '400px',
       overflowY: 'auto',
-      backgroundColor: resolvedColors.surface.primary,
+      backgroundColor: resolvedColors.surface.default,
       border: `1px solid ${resolvedColors.border.default}`,
       borderRadius: theme.radius.md,
       boxShadow: theme.shadows.light.lg,
@@ -297,13 +297,13 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(
           item.variant === 'danger'
             ? theme.colors.error[500]
             : item.disabled
-            ? resolvedColors.text.disabled
-            : resolvedColors.text.primary,
+              ? resolvedColors.text.disabled
+              : resolvedColors.text.primary,
         backgroundColor: isHighlighted ? resolvedColors.surface.hover : 'transparent',
         borderRadius: theme.radius.sm,
         cursor: item.disabled ? 'not-allowed' : 'pointer',
         opacity: item.disabled ? 0.5 : 1,
-        transition: `all ${theme.duration.fast} ${theme.easing.easeOut}`,
+        transition: `all ${theme.duration.fast} ${theme.easing.out}`,
         userSelect: 'none',
       };
     };

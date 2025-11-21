@@ -2,11 +2,16 @@ import type { Metadata } from "next";
 import "./globals.css";
 import React from "react";
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#667eea',
+};
+
 export const metadata: Metadata = {
   title: "TodayPool",
   description: "Focus on what matters today — cross‑platform task pool",
-  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
-  themeColor: "#667eea",
   applicationName: "TodayPool",
 };
 

@@ -21,6 +21,7 @@ export interface NotificationPayload {
   priority?: number; // 1-5
   poolId?: string;
   userId?: string;
+  alarmEnabled?: boolean; // Whether to play sound/alarm
 }
 
 /**

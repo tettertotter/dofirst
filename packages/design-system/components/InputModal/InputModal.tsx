@@ -192,7 +192,7 @@ export const InputModal: React.FC<InputModalProps> = ({
     display: 'flex',
     alignItems: isMobile ? 'flex-end' : 'center',
     justifyContent: 'center',
-    zIndex: theme.spacing.zIndex.modal,
+    zIndex: theme.zIndex.modal,
   };
 
   // Modal styles
@@ -309,75 +309,74 @@ export const InputModal: React.FC<InputModalProps> = ({
             exit="exit"
             transition={modalTransition}
           >
-          {/* Header */}
-          <div style={headerStyles}>
-            <h2 style={titleStyles}>{title}</h2>
-          </div>
+            {/* Header */}
+            <div style={headerStyles}>
+              <h2 style={titleStyles}>{title}</h2>
+            </div>
 
-          {/* Content */}
-          <div style={contentStyles}>
-            <label style={labelStyles}>{label}</label>
-            <input
-              ref={inputRef}
-              type={type}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              required={required}
-              style={inputStyles}
-              onFocus={(e) => {
-                (e.target as HTMLElement).style.borderColor = theme.colors.primary[500];
-                (e.target as HTMLElement).style.boxShadow = `0 0 0 3px ${
-                  isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)'
-                }`;
-              }}
-              onBlur={(e) => {
-                (e.target as HTMLElement).style.borderColor = error
-                  ? theme.colors.error[500]
-                  : resolvedColors.border.default;
-                (e.target as HTMLElement).style.boxShadow = 'none';
-              }}
-            />
-            {error && <div style={errorStyles}>{error}</div>}
-          </div>
+            {/* Content */}
+            <div style={contentStyles}>
+              <label style={labelStyles}>{label}</label>
+              <input
+                ref={inputRef}
+                type={type}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+                required={required}
+                style={inputStyles}
+                onFocus={(e) => {
+                  (e.target as HTMLElement).style.borderColor = theme.colors.primary[500];
+                  (e.target as HTMLElement).style.boxShadow = `0 0 0 3px ${isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)'
+                    }`;
+                }}
+                onBlur={(e) => {
+                  (e.target as HTMLElement).style.borderColor = error
+                    ? theme.colors.error[500]
+                    : resolvedColors.border.default;
+                  (e.target as HTMLElement).style.boxShadow = 'none';
+                }}
+              />
+              {error && <div style={errorStyles}>{error}</div>}
+            </div>
 
-          {/* Footer */}
-          <div style={footerStyles}>
-            <button
-              style={cancelButtonStyles}
-              onClick={() => {
-                haptics.soft();
-                onClose();
-              }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLElement).style.backgroundColor = isDark
-                  ? theme.colors.dark.bg.tertiary
-                  : theme.colors.gray[200];
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLElement).style.backgroundColor = isDark
-                  ? theme.colors.dark.bg.secondary
-                  : theme.colors.gray[100];
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              style={submitButtonStyles}
-              onClick={handleSubmit}
-              onMouseEnter={(e) => {
-                (e.target as HTMLElement).style.backgroundColor = theme.colors.primary[600];
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLElement).style.backgroundColor = theme.colors.primary[500];
-              }}
-            >
-              Submit
-            </button>
-          </div>
+            {/* Footer */}
+            <div style={footerStyles}>
+              <button
+                style={cancelButtonStyles}
+                onClick={() => {
+                  haptics.soft();
+                  onClose();
+                }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLElement).style.backgroundColor = isDark
+                    ? theme.colors.dark.bg.tertiary
+                    : theme.colors.gray[200];
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLElement).style.backgroundColor = isDark
+                    ? theme.colors.dark.bg.secondary
+                    : theme.colors.gray[100];
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                style={submitButtonStyles}
+                onClick={handleSubmit}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLElement).style.backgroundColor = theme.colors.primary[600];
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLElement).style.backgroundColor = theme.colors.primary[500];
+                }}
+              >
+                Submit
+              </button>
+            </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
       )}
     </AnimatePresence>
   );

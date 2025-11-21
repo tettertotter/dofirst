@@ -3,5 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "main": "index.ts",
-  "types": "index.ts"
+  "types": "index.ts",
+  "dependencies": {
+    "@todaypool/design-system": "workspace:*",
+    "framer-motion": "^11.0.0",
+    "lucide-react": "^0.300.0"
+  },
+  "devDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@types/react": "^18.3.1"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  }
 }

@@ -19,7 +19,7 @@ export type ToggleSize = 'sm' | 'md' | 'lg';
 /**
  * Toggle Props
  */
-export interface ToggleProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
+export interface ToggleProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'onChange'> {
   /**
    * Whether toggle is checked
    */
@@ -158,8 +158,8 @@ export const Toggle = forwardRef<HTMLInputElement, ToggleProps>(
       backgroundColor: checked
         ? theme.colors.primary[500]
         : isDark
-        ? theme.colors.gray[700]
-        : theme.colors.gray[300],
+          ? theme.colors.gray[700]
+          : theme.colors.gray[300],
       borderRadius: theme.radius.full,
       transition: `background-color ${theme.duration.normal} ${theme.easing.default}`,
       boxShadow: checked
